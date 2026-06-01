@@ -1,0 +1,25 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[env]
+  [env.production]
+    VITE_API_BASE_URL = "https://your-backend-url.com"
+  
+  [env.preview]
+    VITE_API_BASE_URL = "http://localhost:5000"

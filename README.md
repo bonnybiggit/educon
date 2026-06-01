@@ -32,3 +32,44 @@ npm start
 ```
 
 The frontend sends registration data to `http://localhost:5000/api/register` and login requests to `http://localhost:5000/api/login`.
+
+## Deploying to Netlify
+
+### Frontend Deployment
+
+1. Connect your repository to Netlify
+2. Set build command: `npm run build`
+3. Set publish directory: `dist`
+4. Add environment variable in Netlify dashboard:
+   - Go to **Site Settings** > **Build & Deploy** > **Environment**
+   - Add: `VITE_API_BASE_URL` = your backend API URL (e.g., `https://your-api.herokuapp.com`)
+
+### Admin Panel Access
+
+- Public site: `https://your-site.netlify.app`
+- Admin login: `https://your-site.netlify.app/admin/login`
+- Demo credentials:
+  - Email: `admin@educon.com`
+  - Password: `Admin123!`
+
+### Backend Deployment
+
+The backend server needs to be deployed separately. Options:
+
+- **Heroku**: `heroku create && git push heroku main`
+- **Render**: Create a new Web Service and connect your repo
+- **Railway**: Connect via dashboard
+- **Fly.io**: `flyctl launch`
+
+After deploying the backend, set `VITE_API_BASE_URL` in Netlify to your backend's production URL.
+
+### Important: CORS Configuration
+
+Update your `server/index.js` CORS settings to include your Netlify domain:
+
+```javascript
+const origin = process.env.CORS_ORIGIN || ['http://localhost:5173', 'https://your-site.netlify.app'];
+app.use(cors({ origin }));
+```
+
+Or set `CORS_ORIGIN` environment variable on your backend to: `https://your-site.netlify.app`
