@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Playfair Display", serif;
+  
+  /* Navy / Electric / Sky Scale (Primary) */
+  --color-primary-50: #f0f4fb;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38BDF8; /* Sky Blue */
+  --color-primary-500: #2563eb;
+  --color-primary-600: #1D4ED8; /* Electric Blue */
+  --color-primary-700: #1e3a8a;
+  --color-primary-800: #172554;
+  --color-primary-900: #0D2A54; /* Primary Navy */
+  
+  /* Gold (Accent) */
+  --color-accent-50: #fefce8;
+  --color-accent-100: #fef9c3;
+  --color-accent-200: #fef08a;
+  --color-accent-300: #fde047;
+  --color-accent-400: #E3BB63; /* Softer Gold */
+  --color-accent-500: #C69A28;
+  --color-accent-600: #A67D1F;
+  --color-accent-700: #846117;
+  --color-accent-800: #664B12;
+  --color-accent-900: #4F3A0E;
+  
+  /* Brand Colors */
+  --color-brand-navy: #0d2a54;
+  --color-brand-electric: #0066ff;
+  --color-brand-gold: #facc15;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans text-gray-800 bg-gray-50;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-gray-900;
+  }
+}
+
+@layer utilities {
+  .animate-scroll {
+    animation: scroll 40s linear infinite;
+  }
+  
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.45s ease-out forwards;
+  }
+  
+  @keyframes pulse-gold {
+    0%, 100% {
+      box-shadow: 0 0 0 0 #FACC15;
+    }
+    50% {
+      box-shadow: 0 0 0 12px rgba(250, 204, 21, 0);
+    }
+  }
+  
+  .animate-pulse-gold {
+    animation: pulse-gold 2s infinite;
+  }
+
+  .font-emoji {
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  }
+}
+
