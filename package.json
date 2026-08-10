@@ -1,18 +1,24 @@
 {
   "name": "universe-consult-website",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "cd server && node index.js"
+    "server": "node server/index.js",
+    "start": "node server/index.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.4",
     "lucide-react": "^1.17.0",
+    "mongodb": "^6.11.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.16.0",
