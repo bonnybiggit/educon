@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, Globe, X, ChevronLeft, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react';
 import { universityData } from '../data/universityData';
+import { getDestinationFlagCode, studyDestinationNames, studyDestinations } from '../data/studyDestinations';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -44,6 +45,8 @@ const ExploreUniversities = () => {
   // Filtered universities
   const filteredUniversities = useMemo(() => {
     return universityData.filter((uni) => {
+      if (!studyDestinationNames.includes(uni.country)) return false;
+
       const matchesSearch = 
         uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         uni.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -105,17 +108,8 @@ const ExploreUniversities = () => {
     return range;
   }, [totalPages, currentPage]);
 
-  // Get flag code/image
   const getFlagUrl = (country) => {
-    const mapping = {
-      'Australia': 'au',
-      'France': 'fr',
-      'Ireland': 'ie',
-      'New Zealand': 'nz',
-      'Singapore': 'sg',
-      'United Kingdom': 'gb'
-    };
-    const code = mapping[country] || 'gb';
+    const code = getDestinationFlagCode(country);
     return `https://flagcdn.com/32x24/${code}.png`;
   };
 
@@ -216,12 +210,11 @@ const ExploreUniversities = () => {
                 }}
               >
                 <option value="All">All Countries</option>
-                <option value="Australia">Australia</option>
-                <option value="France">France</option>
-                <option value="Ireland">Ireland</option>
-                <option value="New Zealand">New Zealand</option>
-                <option value="Singapore">Singapore</option>
-                <option value="United Kingdom">United Kingdom</option>
+                {studyDestinations.map((destination) => (
+                  <option key={destination.name} value={destination.name}>
+                    {destination.name}
+                  </option>
+                ))}
               </select>
             </div>
 

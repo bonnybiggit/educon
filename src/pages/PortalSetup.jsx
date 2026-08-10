@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usePortal } from '../context/PortalContext';
 import { User, ArrowRight, Check } from 'lucide-react';
+import { universityData } from '../data/universityData';
+import { studyDestinationNames } from '../data/studyDestinations';
 
 const countries = [
   { code: 'NG', name: 'Nigeria', flag: '🇳🇬', dial: '234' },
@@ -35,20 +37,22 @@ const countries = [
   { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', dial: '971' },
 ];
 
-const universitiesByCountry = {
-  GB: [
-    'University of Oxford',
-    'University of Cambridge',
-    'Imperial College London',
-    'University College London (UCL)',
-    'London School of Economics (LSE)',
-  ],
-  CA: ['University of Toronto', 'McGill University', 'University of British Columbia'],
-  AU: ['University of Melbourne', 'University of Sydney', 'Australian National University'],
-  US: ['Harvard University', 'Stanford University', 'MIT'],
-  NG: ['University of Lagos', 'University of Ibadan', 'Ahmadu Bello University'],
-  IN: ['University of Delhi', 'IIT Bombay'],
-};
+const targetCountryOptions = studyDestinationNames;
+
+const universitiesByCountry = universityData.reduce((acc, university) => {
+  const countryName = university.country;
+  if (!targetCountryOptions.includes(countryName)) return acc;
+
+  if (!acc[countryName]) {
+    acc[countryName] = [];
+  }
+
+  if (!acc[countryName].includes(university.name)) {
+    acc[countryName].push(university.name);
+  }
+
+  return acc;
+}, {});
 
 const courses = [
   'Computer Science',
@@ -92,7 +96,7 @@ const PortalSetup = () => {
     passportNumber: '',
     profilePicture: '',
     // Academic
-    targetCountry: 'GB',
+    targetCountry: 'United Kingdom',
     targetUniversity: '',
     customUniversity: '',
     highestQualification: '',
@@ -235,8 +239,8 @@ const PortalSetup = () => {
   };
 
   const handleTargetCountryChange = (e) => {
-    const code = e.target.value;
-    setFormData(prev => ({ ...prev, targetCountry: code, targetUniversity: '' }));
+    const countryName = e.target.value;
+    setFormData(prev => ({ ...prev, targetCountry: countryName, targetUniversity: '' }));
   };
 
   // uploads state + helpers
@@ -287,7 +291,7 @@ const PortalSetup = () => {
             Student Registration
           </h1>
           <p className="text-gray-600 max-w-md mx-auto">
-            Create your profile to begin your UK university application journey
+            Create your profile to begin your study abroad application journey
           </p>
         </div>
 
@@ -395,7 +399,7 @@ const PortalSetup = () => {
                     <label htmlFor="targetCountry" className="block text-sm font-semibold text-gray-800 mb-2">Target Country *</label>
                     <select id="targetCountry" name="targetCountry" value={formData.targetCountry} onChange={handleTargetCountryChange} className={`w-full px-5 py-3.5 border-2 rounded-xl ${errors.targetCountry? 'border-red-500':'border-gray-200'}`}>
                       <option value="">Select country</option>
-                      {countries.map(c => (<option key={c.code} value={c.code}>{c.name}</option>))}
+                      {targetCountryOptions.map(country => (<option key={country} value={country}>{country}</option>))}
                     </select>
                     {errors.targetCountry && <p className="mt-2 text-sm text-red-600">{errors.targetCountry}</p>}
                   </div>
@@ -403,9 +407,13 @@ const PortalSetup = () => {
                   <div>
                     <label htmlFor="targetUniversity" className="block text-sm font-semibold text-gray-800 mb-2">Target University *</label>
                     <select id="targetUniversity" name="targetUniversity" value={formData.targetUniversity} onChange={handleChange} className={`w-full px-5 py-3.5 border-2 rounded-xl ${errors.targetUniversity? 'border-red-500':'border-gray-200'}`}>
-                      <option value="">Select university</option>
+                      <option value="">
+                        {formData.targetCountry ? 'Select university' : 'Select target country first'}
+                      </option>
                       {(universitiesByCountry[formData.targetCountry] || []).map(uni => (<option key={uni} value={uni}>{uni}</option>))}
-                      <option value="OTHER">Other (specify)</option>
+                      <option value="OTHER">
+                        {(universitiesByCountry[formData.targetCountry] || []).length ? 'Other (specify)' : 'Other / school not listed'}
+                      </option>
                     </select>
                     {formData.targetUniversity === 'OTHER' && (
                       <input name="customUniversity" value={formData.customUniversity} onChange={handleChange} placeholder="Enter university name" className={`mt-2 w-full px-4 py-2 border rounded-md ${errors.customUniversity? 'border-red-500':'border-gray-200'}`} />

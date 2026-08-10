@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Globe, CheckCircle2, Award, GraduationCap, Users, Star, MapPin, ChevronRight } from 'lucide-react';
 import TestimonialSlider from '../components/TestimonialSlider';
+import { getDestinationLabel, studyDestinations } from '../data/studyDestinations';
 
 const stats = [
   { value: '5+', label: 'Years of Excellence' },
@@ -17,23 +18,6 @@ const services = [
   { icon: <Award className="w-5 h-5" />, title: 'Scholarships', desc: 'Identifying financial aid opportunities for you.' },
   { icon: <Users className="w-5 h-5" />, title: 'Pre-departure', desc: 'Accommodation, airport pickup & job searches.' },
   { icon: <MapPin className="w-5 h-5" />, title: 'Free Consultation', desc: 'UK applicants get ALL services 100% FREE.' },
-];
-
-const countries = [
-  { code: 'gb', label: 'UK', emoji: '🇬🇧' },
-  { code: 'ca', label: 'Canada', emoji: '🇨🇦' },
-  { code: 'au', label: 'Australia', emoji: '🇦🇺' },
-  { code: 'ie', label: 'Ireland', emoji: '🇮🇪' },
-  { code: 'nz', label: 'New Zealand', emoji: '🇳🇿' },
-  { code: 'se', label: 'Sweden', emoji: '🇸🇪' },
-  { code: 'de', label: 'Germany', emoji: '🇩🇪' },
-  { code: 'fr', label: 'France', emoji: '🇫🇷' },
-  { code: 'jp', label: 'Japan', emoji: '🇯🇵' },
-  { code: 'ae', label: 'UAE', emoji: '🇦🇪' },
-  { code: 'my', label: 'Malaysia', emoji: '🇲🇾' },
-  { code: 'ch', label: 'Switzerland', emoji: '🇨🇭' },
-  { code: 'mt', label: 'Malta', emoji: '🇲🇹' },
-  { code: 'tr', label: 'Turkey', emoji: '🇹🇷' },
 ];
 
 const testimonials = [
@@ -238,18 +222,18 @@ const Home = () => {
             <p className="text-gray-500 text-sm">We process admissions to 14 amazing countries around the world.</p>
           </div>
           <div className="flex flex-wrap justify-center gap-3">
-            {countries.map((c) => (
+            {studyDestinations.map((destination) => (
               <span
-                key={c.code}
+                key={destination.name}
                 className="inline-flex items-center gap-3 px-4 py-2 bg-primary-50 text-primary-800 rounded-full text-sm font-medium hover:bg-primary-100 transition-colors cursor-default border border-primary-100"
               >
                 <img
-                  src={`https://flagcdn.com/24x18/${c.code}.png`}
-                  alt={`${c.label} flag`}
+                  src={`https://flagcdn.com/24x18/${destination.flagCode}.png`}
+                  alt={`${getDestinationLabel(destination.name)} flag`}
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   className="w-6 h-4 object-cover flex-shrink-0 rounded-sm"
                 />
-                <span className="leading-none">{c.label}</span>
+                <span className="leading-none">{getDestinationLabel(destination.name)}</span>
               </span>
             ))}
           </div>
