@@ -26,11 +26,32 @@ const Contact = () => {
     <div className="bg-gray-50 min-h-screen">
 
       {/* Compact header */}
-      <div className="bg-primary-900 py-12 text-center text-white">
-        <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">Get in Touch</h1>
-        <p className="text-primary-300 text-sm max-w-lg mx-auto">
-          Start your global education journey today. We respond to all enquiries within 3 working days.
-        </p>
+      <div
+        className="relative py-12 text-center text-white"
+        style={{
+          backgroundImage: "linear-gradient(135deg, rgba(2, 16, 39, 0.88), rgba(15, 23, 42, 0.72)), url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-1/2 -right-1/4 w-full h-full bg-primary-600 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute -bottom-1/2 -left-1/4 w-full h-full bg-primary-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0wIDEwaDQwdjJIMHoiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-30"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-accent-400 text-xs font-semibold tracking-wide uppercase mb-4 backdrop-blur-sm">
+            <Mail className="w-3.5 h-3.5" />
+            <span>Contact Us</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-3 tracking-tight">
+            Get <span className="text-primary-400">in Touch</span>
+          </h1>
+          <p className="text-base text-primary-200 max-w-2xl mx-auto font-light leading-relaxed">
+            Start your global education journey today. We respond to all enquiries within 3 working days.
+          </p>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 -mt-8">
