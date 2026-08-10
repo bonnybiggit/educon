@@ -47,7 +47,7 @@ const testimonials = [
 const Home = () => {
 
   return (
-    <div className="bg-white">
+    <div className="bg-white overflow-x-hidden">
 
       {/* ── HERO ── */}
       <section className="relative bg-primary-900 overflow-hidden min-h-[90vh] flex items-center">
@@ -97,8 +97,8 @@ const Home = () => {
           </div>
 
           {/* Right floating card */}
-          <div className="hidden lg:flex flex-col gap-4">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-white">
+          <div className="flex flex-col gap-4 w-full max-w-md mx-auto lg:max-w-none lg:ml-auto mt-8 lg:mt-0">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 sm:p-6 text-white">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-accent-400 rounded-full flex items-center justify-center">
                   <GraduationCap className="w-5 h-5 text-primary-900" />
@@ -109,21 +109,21 @@ const Home = () => {
                 </div>
                 <div className="ml-auto bg-green-400 text-green-900 text-xs font-bold px-2 py-0.5 rounded-full">FREE</div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {['Admission Processing', 'Visa Assistance', 'Accommodation', 'Airport Pickup'].map(s => (
-                  <div key={s} className="flex items-center gap-1.5 text-xs text-primary-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-accent-400 shrink-0" /> {s}
+                  <div key={s} className="flex items-center gap-1.5 text-xs text-primary-200 leading-relaxed">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-accent-400 shrink-0" /> <span>{s}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 text-white flex flex-col gap-4">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 sm:p-5 text-white flex flex-col gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center shrink-0">
                   <Globe className="w-6 h-6 text-primary-200" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold font-display">14 Countries</div>
+                  <div className="text-xl sm:text-2xl font-bold font-display">14 Countries</div>
                   <div className="text-xs text-primary-300">200+ Partner Universities Worldwide (90+ in the UK)</div>
                 </div>
               </div>
@@ -131,7 +131,7 @@ const Home = () => {
                 href="https://wa.me/447760907775"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-accent-400 hover:bg-accent-500 text-primary-900 font-bold px-5 py-3 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+                className="inline-flex items-center justify-center gap-2 bg-accent-400 hover:bg-accent-500 text-primary-900 font-bold px-5 py-3 rounded-lg transition-all shadow-md hover:shadow-lg text-sm w-full sm:w-auto"
               >
                 BECOME A PARTNER AND EARN <ArrowRight className="w-4 h-4" />
               </a>
@@ -211,7 +211,7 @@ const Home = () => {
             <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-2">Everything You Need</h2>
             <p className="text-gray-500 text-sm max-w-xl mx-auto">From first consultation to your first day on campus — we've got you covered every step of the way.</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {services.map((s, i) => (
               <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all group">
                 <div className="w-9 h-9 bg-primary-50 rounded-lg flex items-center justify-center text-primary-600 mb-3 group-hover:bg-primary-600 group-hover:text-white transition-colors">
@@ -283,7 +283,7 @@ const Home = () => {
       {/* ── TESTIMONIALS MARQUEE ── */}
       <section className="py-16 bg-primary-50 border-t border-primary-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-[11px] font-semibold uppercase tracking-[0.18em] mb-4">
               <Star className="w-3.5 h-3.5 fill-primary-600 text-primary-600" />
               Testimonials
@@ -291,32 +291,40 @@ const Home = () => {
             <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900">What our students say</h2>
           </div>
 
-          <div className="relative">
-            <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-20 bg-gradient-to-r from-gray-50 to-transparent" />
-            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-20 bg-gradient-to-l from-gray-50 to-transparent" />
+          <div className="relative overflow-hidden">
+            <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 sm:w-20 bg-gradient-to-r from-primary-50 to-transparent" />
+            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 sm:w-20 bg-gradient-to-l from-primary-50 to-transparent" />
 
-            <div className="marquee-track flex w-max gap-4">
-              {[...testimonials, ...testimonials].map((item, idx) => (
-                <div
-                  key={`${item.name}-${idx}`}
-                  className="w-[320px] shrink-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-all"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary-900 text-accent-400 font-bold text-sm flex items-center justify-center">
-                        {item.name.charAt(0)}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-900">{item.name}</h3>
-                        <div className="flex items-center gap-1 mt-1 text-amber-400">
-                          {Array.from({ length: 5 }).map((_, starIdx) => (
-                            <Star key={starIdx} className="w-3.5 h-3.5 fill-current" />
-                          ))}
+            <div className="testimonial-marquee flex w-max">
+              {Array.from({ length: 2 }).map((_, setIndex) => (
+                <div key={setIndex} className="flex shrink-0">
+                  {testimonials.map((item, idx) => (
+                    <div
+                      key={`${setIndex}-${item.name}-${idx}`}
+                      className="testimonial-card w-[270px] sm:w-[320px] shrink-0 rounded-[24px] border border-primary-100 bg-white p-5 sm:p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_18px_42px_rgba(15,23,42,0.10)] transition-all duration-300"
+                      style={{ marginRight: idx === testimonials.length - 1 ? 0 : '1.25rem' }}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary-900 to-primary-700 text-accent-400 font-bold text-sm flex items-center justify-center shadow-md">
+                            {item.name.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-bold text-gray-900">{item.name}</h3>
+                            <div className="flex items-center gap-1 mt-1 text-amber-400">
+                              {Array.from({ length: 5 }).map((_, starIdx) => (
+                                <Star key={starIdx} className="w-3.5 h-3.5 fill-current" />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="rounded-full bg-primary-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary-700">
+                          Verified
                         </div>
                       </div>
+                      <p className="text-sm sm:text-[15px] leading-relaxed text-gray-600">“{item.text}”</p>
                     </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-gray-600">“{item.text}”</p>
+                  ))}
                 </div>
               ))}
             </div>
@@ -325,16 +333,20 @@ const Home = () => {
       </section>
 
       <style>{`
-        .marquee-track {
-          animation: marquee 38s linear infinite;
+        .testimonial-marquee {
+          animation: testimonial-scroll 34s linear infinite;
           will-change: transform;
         }
 
-        .marquee-track:hover {
+        .testimonial-marquee:hover {
           animation-play-state: paused;
         }
 
-        @keyframes marquee {
+        .testimonial-card {
+          background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(248,250,252,1) 100%);
+        }
+
+        @keyframes testimonial-scroll {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
