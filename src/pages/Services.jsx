@@ -39,11 +39,11 @@ const Services = () => {
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
               <div className="bg-white/60 px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
                 <CheckCircle2 className="w-5 h-5 text-primary-700" />
-                UK Applicants: <span className="font-bold text-primary-900">100% FREE</span>
+                All applicants: <span className="font-bold text-primary-900">100% FREE</span>
               </div>
               <div className="bg-white/60 px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
                 <CheckCircle2 className="w-5 h-5 text-primary-700" />
-                Other Countries: <span className="font-bold text-primary-900">N200,000 Fee</span>
+                Coverage: <span className="font-bold text-primary-900">All 14 Countries</span>
               </div>
             </div>
           </div>

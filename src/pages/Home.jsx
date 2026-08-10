@@ -36,6 +36,14 @@ const countries = [
   { code: 'tr', label: 'Turkey', emoji: '🇹🇷' },
 ];
 
+const testimonials = [
+  { name: 'Korede', text: 'I got my admission for masters by research and it allowed me to bring my family with me. I did not pay any service fees. Excellent service, Universe Consults' },
+  { name: 'Doreen', text: 'Seamlessly the best Educational consultancy. I rate them 5/5.' },
+  { name: 'Jesuseun', text: 'I will recommend Universe Consults any day and any time. Thumps up.' },
+  { name: 'Alex', text: 'You need personalised services? Think Universe Consults.' },
+  { name: 'Nneka', text: 'I have 3rd class and everyone said I cannot study masters abroad. Universe Consults helped me secure my msc admission and assisted until I resumed in September 2025.' },
+];
+
 const Home = () => {
 
   return (
@@ -70,9 +78,9 @@ const Home = () => {
               <span className="text-accent-400">Within Reach.</span>
             </h1>
               <p className="text-primary-200 text-base md:text-lg leading-relaxed mb-8 max-w-lg">
-              Universe Educational Consultancy connects you to 200+ partner universities across 14 countries, including 90+ in the UK. Expert guidance, zero stress — UK applicants study completely <strong className="text-white">FREE</strong>.
+              Universe Educational Consultancy connects you to 200+ partner universities across 14 countries. Expert guidance, zero stress — your application process is completely <strong className="text-white">FREE across all 14 countries</strong>.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
               <Link
                 to="/contact"
                 className="bg-accent-400 hover:bg-accent-500 text-primary-900 font-bold px-7 py-3.5 rounded-lg transition-all hover:shadow-lg hover:shadow-accent-400/30 flex items-center justify-center gap-2"
@@ -96,8 +104,8 @@ const Home = () => {
                   <GraduationCap className="w-5 h-5 text-primary-900" />
                 </div>
                 <div>
-                  <div className="font-bold text-sm">UK Applicants</div>
-                  <div className="text-xs text-primary-300">All services included</div>
+                  <div className="font-bold text-sm">All Applicants</div>
+                  <div className="text-xs text-primary-300">Across all 14 countries</div>
                 </div>
                 <div className="ml-auto bg-green-400 text-green-900 text-xs font-bold px-2 py-0.5 rounded-full">FREE</div>
               </div>
@@ -109,14 +117,24 @@ const Home = () => {
                 ))}
               </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 text-white flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center shrink-0">
-                <Globe className="w-6 h-6 text-primary-200" />
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 text-white flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center shrink-0">
+                  <Globe className="w-6 h-6 text-primary-200" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold font-display">14 Countries</div>
+                  <div className="text-xs text-primary-300">200+ Partner Universities Worldwide (90+ in the UK)</div>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold font-display">14 Countries</div>
-                <div className="text-xs text-primary-300">200+ Partner Universities Worldwide (90+ in the UK)</div>
-              </div>
+              <a
+                href="https://wa.me/447760907775"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-accent-400 hover:bg-accent-500 text-primary-900 font-bold px-5 py-3 rounded-lg transition-all shadow-md hover:shadow-lg text-sm"
+              >
+                BECOME A PARTNER AND EARN <ArrowRight className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>
@@ -239,11 +257,11 @@ const Home = () => {
       </section>
 
       {/* ── PROCESS ── */}
-      <section className="py-16 bg-primary-900 text-white">
+      <section className="py-16 bg-gray-50 text-gray-900 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-display font-bold mb-2">Your Journey in 4 Steps</h2>
-            <p className="text-primary-300 text-sm">A seamless process from first contact to landing at your destination.</p>
+            <h2 className="text-2xl md:text-3xl font-display font-bold mb-2 text-gray-900">Your Journey in 4 Steps</h2>
+            <p className="text-gray-600 text-sm">A seamless process from first contact to landing at your destination.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -252,15 +270,75 @@ const Home = () => {
               { n: '03', title: 'Application & Visa', desc: 'We handle all documents, submissions, and visa guidance.' },
               { n: '04', title: 'Arrive & Settle', desc: 'Accommodation, airport pickup & job support (UK).' },
             ].map((step, i) => (
-              <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-colors">
-                <div className="text-4xl font-display font-bold text-accent-400/40 mb-3">{step.n}</div>
-                <h3 className="font-bold text-white mb-2">{step.title}</h3>
-                <p className="text-primary-300 text-sm leading-relaxed">{step.desc}</p>
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all shadow-sm">
+                <div className="text-4xl font-display font-bold text-primary-200 mb-3">{step.n}</div>
+                <h3 className="font-bold text-gray-900 mb-2">{step.title}</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* ── TESTIMONIALS MARQUEE ── */}
+      <section className="py-16 bg-primary-50 border-t border-primary-100 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-[11px] font-semibold uppercase tracking-[0.18em] mb-4">
+              <Star className="w-3.5 h-3.5 fill-primary-600 text-primary-600" />
+              Testimonials
+            </div>
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-gray-900">What our students say</h2>
+          </div>
+
+          <div className="relative">
+            <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-20 bg-gradient-to-r from-gray-50 to-transparent" />
+            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-20 bg-gradient-to-l from-gray-50 to-transparent" />
+
+            <div className="marquee-track flex w-max gap-4">
+              {[...testimonials, ...testimonials].map((item, idx) => (
+                <div
+                  key={`${item.name}-${idx}`}
+                  className="w-[320px] shrink-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-all"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary-900 text-accent-400 font-bold text-sm flex items-center justify-center">
+                        {item.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900">{item.name}</h3>
+                        <div className="flex items-center gap-1 mt-1 text-amber-400">
+                          {Array.from({ length: 5 }).map((_, starIdx) => (
+                            <Star key={starIdx} className="w-3.5 h-3.5 fill-current" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed text-gray-600">“{item.text}”</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <style>{`
+        .marquee-track {
+          animation: marquee 38s linear infinite;
+          will-change: transform;
+        }
+
+        .marquee-track:hover {
+          animation-play-state: paused;
+        }
+
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
 
       {/* Blog removed */}
     </div>

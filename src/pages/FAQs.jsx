@@ -12,7 +12,7 @@ const faqs = [
   {
     category: 'Pricing',
     questions: [
-      { q: 'How much do your services cost?', a: 'For UK applicants, ALL our services are 100% FREE. For other countries, we charge a service fee of N200,000 (or its equivalent in GBP).' },
+      { q: 'How much do your services cost?', a: 'All our services are 100% FREE for applicants across all 14 countries. There is no application fee or service fee charged to students.' },
       { q: 'Do I pay tuition fees to Universe Consult?', a: 'No. We will guide you on how to make your payments securely and directly to the universities upon receiving your admission offer.' },
     ]
   },
@@ -26,7 +26,7 @@ const faqs = [
   {
     category: 'UK-Specific',
     questions: [
-      { q: 'What extra services do UK applicants receive?', a: 'In addition to free processing, UK students receive help with accommodation, airport pickup on arrival, and part-time job search assistance.' },
+      { q: 'What extra services do students receive?', a: 'In addition to free processing, students receive support with accommodation guidance, airport pickup coordination on arrival, and part-time job search assistance where available.' },
       { q: 'What is a preCAS interview?', a: 'A preCAS interview is conducted by the university to verify your credibility before issuing a CAS (Confirmation of Acceptance for Studies). We provide one-on-one preparation sessions.' },
     ]
   }

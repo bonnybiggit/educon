@@ -10,6 +10,7 @@ const Navbar = () => {
     { name: 'Home', href: '/' },
     { name: 'About', href: '/about' },
     { name: 'Services', href: '/services' },
+    { name: 'Explore Universities', href: '/explore-universities' },
     { name: 'Contact', href: '/contact' },
     { name: 'Register Now', href: '/portal/setup' },
   ];
@@ -19,32 +20,43 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-        <div className="flex justify-between items-center h-24">
-          <div className="flex items-center">
+        <div className="flex items-center justify-between h-24 gap-4">
+          <div className="flex items-center shrink-0">
             <Link to="/" className="flex-shrink-0 flex items-center group">
               <img src="/logo.png" alt="Universe Consult Logo" className="h-14 md:h-16 w-auto object-contain transition-transform group-hover:scale-105" />
             </Link>
           </div>
 
           {/* Desktop menu */}
-          <div className="hidden md:flex items-center space-x-10">
-            <div className="flex space-x-8 items-center">
-              {navigation.map((item) => (
+          <div className="hidden md:flex flex-1 items-center justify-center">
+            <div className="flex items-center justify-center gap-2 lg:gap-6 xl:gap-8">
+              {navigation.filter((item) => item.name !== 'Register Now').map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
                   className={`${
                     isActive(item.href)
                       ? 'text-primary-600 font-semibold'
-                      : item.name === 'Register Now'
-                        ? 'bg-accent-400 text-primary-900 hover:bg-accent-500 px-4 py-2 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg'
-                        : 'text-gray-700 hover:text-primary-600'
-                  } px-4 py-2 text-base font-medium transition-colors`}
+                      : 'text-gray-700 hover:text-primary-600'
+                  } px-3 py-2 text-sm lg:text-base font-medium transition-colors whitespace-nowrap`}
                 >
                   {item.name}
                 </Link>
               ))}
             </div>
+          </div>
+
+          <div className="hidden md:flex items-center justify-end shrink-0">
+            <Link
+              to="/portal/setup"
+              className={`${
+                isActive('/portal/setup')
+                  ? 'bg-accent-500 text-primary-900'
+                  : 'bg-accent-400 text-primary-900 hover:bg-accent-500'
+              } px-4 py-2.5 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg text-sm lg:text-base whitespace-nowrap`}
+            >
+              Register Now
+            </Link>
           </div>
 
           {/* Mobile menu button */}

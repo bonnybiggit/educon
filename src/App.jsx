@@ -8,6 +8,7 @@ import About from './pages/About'
 import Services from './pages/Services'
 import FAQs from './pages/FAQs'
 import Contact from './pages/Contact'
+import ExploreUniversities from './pages/ExploreUniversities'
 import Login from './pages/Login'
 import PortalSetup from './pages/PortalSetup'
 import Dashboard from './pages/Dashboard'
@@ -38,6 +39,7 @@ const MainSiteContent = () => {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/explore-universities" element={<ExploreUniversities />} />
           <Route path="/faqs" element={<FAQs />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
