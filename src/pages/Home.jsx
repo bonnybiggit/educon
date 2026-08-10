@@ -54,7 +54,7 @@ const Home = () => {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-400/20 border border-accent-400/40 text-accent-400 text-xs font-semibold tracking-widest uppercase mb-6">
               <Star className="w-3.5 h-3.5 fill-accent-400" />
-              CAC & SCUML Registered · 5 Years of Excellence
+              We work with all African and Asian nationals
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white leading-tight mb-5">
               Your Dream<br />
