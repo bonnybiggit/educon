@@ -1,6 +1,7 @@
 import { usePortal } from '../context/PortalContext';
 import { LogOut, User, GraduationCap, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const MilestoneStep = ({ milestone, status }) => {
   const getStatusStyles = () => {
@@ -68,19 +69,25 @@ const MilestoneStep = ({ milestone, status }) => {
 };
 
 const Dashboard = () => {
-  const { applicationData, milestones, mockMilestoneStatus, logout } = usePortal();
+  const { applicationData, milestones, mockMilestoneStatus, logout, loggedInUser } = usePortal();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const isStudentAuthenticated = sessionStorage.getItem('educonStudentAuthenticated') === 'true';
+    const hasProfile = Boolean(applicationData.fullName || loggedInUser?.fullName || loggedInUser?.name);
+
+    if (!isStudentAuthenticated && !hasProfile) {
+      navigate('/login');
+    }
+  }, [applicationData.fullName, loggedInUser, navigate]);
+
   const handleLogout = () => {
-    const name = applicationData.fullName || (loggedInUser && loggedInUser.name) || '';
+    const name = applicationData.fullName || loggedInUser?.fullName || loggedInUser?.name || 'Student';
     logout();
     navigate('/logout', { state: { name } });
   };
 
-  if (!applicationData.fullName) {
-    navigate('/portal/setup');
-    return null;
-  }
+  const profileName = applicationData.fullName || loggedInUser?.fullName || loggedInUser?.name || 'Student';
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -89,6 +96,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-3xl font-display font-bold text-gray-900">Student Dashboard</h1>
             <p className="text-gray-600 mt-1">Track your application progress</p>
+            <p className="text-sm text-primary-600 mt-2">Welcome back, {profileName}</p>
           </div>
           <div className="flex items-center gap-4">
             {applicationData.profilePicture && (
@@ -110,7 +118,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider">Full Name</span>
-                <p className="font-semibold text-gray-900">{applicationData.fullName}</p>
+                <p className="font-semibold text-gray-900">{profileName}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider">Date of Birth</span>
@@ -118,7 +126,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider">Email Address</span>
-                <p className="font-semibold text-gray-900">{applicationData.email}</p>
+                <p className="font-semibold text-gray-900">{applicationData.email || loggedInUser?.email || 'Not available'}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider">Mobile Number</span>

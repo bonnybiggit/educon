@@ -1,24 +1,38 @@
-import { createContext, useContext, useState, useMemo } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect } from 'react';
 
 const PortalContext = createContext(null);
 
+const defaultApplicationData = {
+  fullName: '',
+  dateOfBirth: '',
+  email: '',
+  mobileNumber: '',
+  countryCode: '234',
+  country: '',
+  passportNumber: '',
+  targetUniversity: '',
+  customUniversity: '',
+  profilePicture: '',
+  courseOfStudy: '',
+  intakeSession: '',
+  currentStage: '',
+  consent: false,
+};
+
+const getStoredStudentProfile = () => {
+  try {
+    const rawProfile = sessionStorage.getItem('educonStudentProfile');
+    return rawProfile ? JSON.parse(rawProfile) : null;
+  } catch (error) {
+    return null;
+  }
+};
+
 export const PortalProvider = ({ children }) => {
-  const [loggedInUser, setLoggedInUser] = useState(null);
-  const [applicationData, setApplicationData] = useState({
-    fullName: '',
-    dateOfBirth: '',
-    email: '',
-    mobileNumber: '',
-    countryCode: '234',
-    country: '',
-    passportNumber: '',
-    targetUniversity: '',
-    customUniversity: '',
-    profilePicture: '',
-    courseOfStudy: '',
-    intakeSession: '',
-    currentStage: '',
-    consent: false,
+  const [loggedInUser, setLoggedInUser] = useState(() => getStoredStudentProfile());
+  const [applicationData, setApplicationData] = useState(() => {
+    const storedProfile = getStoredStudentProfile();
+    return storedProfile ? { ...defaultApplicationData, ...storedProfile } : { ...defaultApplicationData };
   });
 
   const milestones = useMemo(() => [
@@ -39,6 +53,15 @@ export const PortalProvider = ({ children }) => {
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+  useEffect(() => {
+    if (loggedInUser) {
+      const profile = { ...defaultApplicationData, ...loggedInUser };
+      setApplicationData(profile);
+      sessionStorage.setItem('educonStudentProfile', JSON.stringify(profile));
+      sessionStorage.setItem('educonStudentAuthenticated', 'true');
+    }
+  }, [loggedInUser]);
+
   const login = async (email, password) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/login`, {
@@ -52,7 +75,11 @@ export const PortalProvider = ({ children }) => {
         return { success: false, error: result.error || 'Login failed' };
       }
 
-      setLoggedInUser(result.user);
+      const profile = { ...defaultApplicationData, ...result.user };
+      setLoggedInUser(profile);
+      setApplicationData(profile);
+      sessionStorage.setItem('educonStudentProfile', JSON.stringify(profile));
+      sessionStorage.setItem('educonStudentAuthenticated', 'true');
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Login service unavailable' };
@@ -60,27 +87,16 @@ export const PortalProvider = ({ children }) => {
   };
 
   const updateApplicationData = (data) => {
-    setApplicationData(prev => ({ ...prev, ...data }));
+    const merged = { ...defaultApplicationData, ...applicationData, ...data };
+    setApplicationData(merged);
+    sessionStorage.setItem('educonStudentProfile', JSON.stringify(merged));
   };
 
   const logout = () => {
     setLoggedInUser(null);
-    setApplicationData({
-      fullName: '',
-      dateOfBirth: '',
-      email: '',
-      mobileNumber: '',
-      countryCode: '234',
-      country: '',
-      passportNumber: '',
-      targetUniversity: '',
-      customUniversity: '',
-      profilePicture: '',
-      courseOfStudy: '',
-      intakeSession: '',
-      currentStage: '',
-      consent: false,
-    });
+    setApplicationData({ ...defaultApplicationData });
+    sessionStorage.removeItem('educonStudentAuthenticated');
+    sessionStorage.removeItem('educonStudentProfile');
   };
 
   return (

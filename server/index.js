@@ -13,26 +13,47 @@ const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB_NAME || 'educon';
 const collectionName = process.env.MONGODB_COLLECTION || 'students';
 
-if (!uri) {
-  console.error('Missing MONGODB_URI in environment configuration.');
-  process.exit(1);
-}
+const memoryStudents = [];
+let studentsCollection;
+let usingMemoryStore = false;
 
 app.use(cors({ origin }));
 app.use(express.json({ limit: '8mb' }));
 
-const client = new MongoClient(uri);
+const client = uri ? new MongoClient(uri) : null;
 
-let studentsCollection;
+const formatStudentResponse = (student) => ({
+  ...student,
+  id: student._id ? student._id.toString() : student.id,
+  createdAt: student.createdAt?.toISOString ? student.createdAt.toISOString() : new Date(student.createdAt).toISOString(),
+  updatedAt: student.updatedAt?.toISOString ? student.updatedAt.toISOString() : student.updatedAt ? new Date(student.updatedAt).toISOString() : undefined,
+});
 
 async function startServer() {
-  await client.connect();
-  const db = client.db(dbName);
-  studentsCollection = db.collection(collectionName);
-  await studentsCollection.createIndex({ email: 1 }, { unique: true });
-  app.listen(port, () => {
-    console.log(`Server listening on http://localhost:${port}`);
-  });
+  if (!uri) {
+    console.warn('No MONGODB_URI found. Starting in local memory mode for app testing.');
+    usingMemoryStore = true;
+    app.listen(port, () => {
+      console.log(`Server listening on http://localhost:${port} (memory mode)`);
+    });
+    return;
+  }
+
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    studentsCollection = db.collection(collectionName);
+    await studentsCollection.createIndex({ email: 1 }, { unique: true });
+    app.listen(port, () => {
+      console.log(`Server listening on http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.warn('MongoDB connection failed. Falling back to in-memory student storage.', error.message);
+    usingMemoryStore = true;
+    app.listen(port, () => {
+      console.log(`Server listening on http://localhost:${port} (memory mode)`);
+    });
+  }
 }
 
 app.get('/api/health', (_req, res) => {
@@ -96,9 +117,19 @@ app.post('/api/register', async (req, res) => {
     },
     password: await bcrypt.hash(payload.password, 10),
     createdAt: new Date(),
+    id: `memory-${Date.now()}-${Math.random().toString(16).slice(2)}`,
   };
 
   try {
+    if (usingMemoryStore) {
+      const emailAlreadyExists = memoryStudents.some((student) => student.email.toLowerCase() === studentDocument.email.toLowerCase());
+      if (emailAlreadyExists) {
+        return res.status(409).json({ error: 'Email already registered' });
+      }
+      memoryStudents.unshift(studentDocument);
+      return res.status(201).json({ success: true });
+    }
+
     await studentsCollection.insertOne(studentDocument);
     return res.status(201).json({ success: true });
   } catch (error) {
@@ -116,7 +147,13 @@ app.post('/api/login', async (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const student = await studentsCollection.findOne({ email: email.toLowerCase() });
+  let student;
+  if (usingMemoryStore) {
+    student = memoryStudents.find((item) => item.email.toLowerCase() === String(email).toLowerCase());
+  } else {
+    student = await studentsCollection.findOne({ email: email.toLowerCase() });
+  }
+
   if (!student) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
@@ -130,23 +167,25 @@ app.post('/api/login', async (req, res) => {
   return res.json({
     success: true,
     user: {
-      email: user.email,
+      ...user,
+      fullName: user.fullName,
       name: user.fullName,
-      profilePicture: user.profilePicture || '',
+      id: user._id ? user._id.toString() : user.id,
+      createdAt: user.createdAt?.toISOString ? user.createdAt.toISOString() : new Date(user.createdAt).toISOString(),
+      updatedAt: user.updatedAt?.toISOString ? user.updatedAt.toISOString() : user.updatedAt ? new Date(user.updatedAt).toISOString() : undefined,
     },
   });
 });
 
 app.get('/api/students', async (_req, res) => {
   try {
-    const students = await studentsCollection.find().sort({ createdAt: -1 }).toArray();
+    const students = usingMemoryStore
+      ? [...memoryStudents].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      : await studentsCollection.find().sort({ createdAt: -1 }).toArray();
+
     return res.json({
       success: true,
-      students: students.map((student) => ({
-        ...student,
-        id: student._id.toString(),
-        createdAt: student.createdAt?.toISOString(),
-      })),
+      students: students.map((student) => formatStudentResponse(student)),
     });
   } catch (error) {
     console.error('Fetch students error:', error);
@@ -171,6 +210,19 @@ app.patch('/api/students/:id', async (req, res) => {
   }
 
   try {
+    if (usingMemoryStore) {
+      const studentIndex = memoryStudents.findIndex((student) => student.id === id || student._id?.toString?.() === id);
+      if (studentIndex === -1) {
+        return res.status(404).json({ error: 'Student not found' });
+      }
+      const student = memoryStudents[studentIndex];
+      Object.assign(student, patch, { updatedAt: new Date() });
+      return res.json({
+        success: true,
+        student: formatStudentResponse(student),
+      });
+    }
+
     const result = await studentsCollection.findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set: { ...patch, updatedAt: new Date() } },
@@ -184,11 +236,7 @@ app.patch('/api/students/:id', async (req, res) => {
     const student = result.value;
     return res.json({
       success: true,
-      student: {
-        ...student,
-        id: student._id.toString(),
-        createdAt: student.createdAt?.toISOString(),
-      },
+      student: formatStudentResponse(student),
     });
   } catch (error) {
     console.error('Update student error:', error);
