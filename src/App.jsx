@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -13,8 +13,18 @@ import Login from './pages/Login'
 import PortalSetup from './pages/PortalSetup'
 import Dashboard from './pages/Dashboard'
 import Logout from './pages/Logout'
-import AdminLogin from './pages/AdminLogin'
-import AdminDashboard from './pages/AdminDashboard'
+import AdminLogin from './admin/pages/AdminLogin'
+import AdminDashboard from './admin/pages/AdminDashboard'
+import AdminRouteGuard from './admin/components/AdminRouteGuard'
+import AdminLayout from './admin/components/AdminLayout'
+import {
+  AdminStudents,
+  AdminEnquiries,
+  AdminServices,
+  AdminTestimonials,
+  AdminBlog,
+  AdminSettings
+} from './admin/pages/AdminPlaceholders'
 import { PortalProvider } from './context/PortalContext'
 
 const MainSiteContent = () => {
@@ -68,7 +78,76 @@ const AdminContent = () => {
   return (
     <Routes>
       <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route
+        path="/admin/dashboard"
+        element={(
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
+          </AdminRouteGuard>
+        )}
+      />
+      <Route
+        path="/admin/students"
+        element={(
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminStudents />
+            </AdminLayout>
+          </AdminRouteGuard>
+        )}
+      />
+      <Route
+        path="/admin/enquiries"
+        element={(
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminEnquiries />
+            </AdminLayout>
+          </AdminRouteGuard>
+        )}
+      />
+      <Route
+        path="/admin/services"
+        element={(
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminServices />
+            </AdminLayout>
+          </AdminRouteGuard>
+        )}
+      />
+      <Route
+        path="/admin/testimonials"
+        element={(
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminTestimonials />
+            </AdminLayout>
+          </AdminRouteGuard>
+        )}
+      />
+      <Route
+        path="/admin/blog"
+        element={(
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminBlog />
+            </AdminLayout>
+          </AdminRouteGuard>
+        )}
+      />
+      <Route
+        path="/admin/settings"
+        element={(
+          <AdminRouteGuard>
+            <AdminLayout>
+              <AdminSettings />
+            </AdminLayout>
+          </AdminRouteGuard>
+        )}
+      />
     </Routes>
   )
 }

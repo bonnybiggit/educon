@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import { loginStudent } from '../services/studentApi';
 
 const PortalContext = createContext(null);
 
@@ -23,7 +24,7 @@ const getStoredStudentProfile = () => {
   try {
     const rawProfile = sessionStorage.getItem('educonStudentProfile');
     return rawProfile ? JSON.parse(rawProfile) : null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -51,8 +52,6 @@ export const PortalProvider = ({ children }) => {
     5: 'pending',
   }), []);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
   useEffect(() => {
     if (loggedInUser) {
       const profile = { ...defaultApplicationData, ...loggedInUser };
@@ -64,24 +63,19 @@ export const PortalProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const result = await response.json();
+      const result = await loginStudent({ email, password });
 
-      if (!response.ok) {
+      if (!result.success) {
         return { success: false, error: result.error || 'Login failed' };
       }
 
-      const profile = { ...defaultApplicationData, ...result.user };
+      const profile = { ...defaultApplicationData, ...(result.data?.user || result.user) };
       setLoggedInUser(profile);
       setApplicationData(profile);
       sessionStorage.setItem('educonStudentProfile', JSON.stringify(profile));
       sessionStorage.setItem('educonStudentAuthenticated', 'true');
       return { success: true };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Login service unavailable' };
     }
   };

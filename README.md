@@ -48,9 +48,7 @@ The frontend sends registration data to `http://localhost:5000/api/register` and
 
 - Public site: `https://your-site.netlify.app`
 - Admin login: `https://your-site.netlify.app/admin/login`
-- Demo credentials:
-  - Email: `admin@educon.com`
-  - Password: `Admin123!`
+- Admin credentials must be created on the backend. For first-time setup, configure `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`, and `JWT_SECRET` in the backend environment.
 
 ### Backend Deployment
 

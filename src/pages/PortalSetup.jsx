@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usePortal } from '../context/PortalContext';
-import { User, ArrowRight, Check } from 'lucide-react';
+import { User, Check } from 'lucide-react';
 import { universityData } from '../data/universityData';
 import { studyDestinationNames } from '../data/studyDestinations';
+import { registerStudent } from '../services/studentApi';
 
 const countries = [
   { code: 'NG', name: 'Nigeria', flag: '🇳🇬', dial: '234' },
@@ -79,7 +80,6 @@ const stages = [
 ];
 
 const PortalSetup = () => {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
   const navigate = useNavigate();
   const { updateApplicationData } = usePortal();
   const [step, setStep] = useState(1);
@@ -110,47 +110,6 @@ const PortalSetup = () => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
-    }
-    if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = 'Date of birth is required';
-    }
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-    if (!formData.mobileNumber.trim()) {
-      newErrors.mobileNumber = 'Mobile number is required';
-    }
-    if (!formData.country) {
-      newErrors.country = 'Country is required';
-    }
-    if (!formData.passportNumber.trim()) {
-      newErrors.passportNumber = 'Passport number is required';
-    }
-    if (!formData.targetCountry) {
-      newErrors.targetUniversity = 'Target country is required';
-    }
-    if (!formData.courseOfStudy) {
-      newErrors.courseOfStudy = 'Course of study is required';
-    }
-    if (!formData.intakeSession) {
-      newErrors.intakeSession = 'Intake session is required';
-    }
-    if (!formData.currentStage) {
-      newErrors.currentStage = 'Current stage is required';
-    }
-    if (!formData.consent) {
-      newErrors.consent = 'You must accept the privacy policy';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const validateStep = (s) => {
     const oldErrors = {};
@@ -198,22 +157,17 @@ const PortalSetup = () => {
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registrationData),
-      });
-      const result = await response.json();
+      const result = await registerStudent(registrationData);
 
-      if (!response.ok) {
-        setErrors({ submit: result.error || 'Registration failed' });
+      if (!result.success) {
+        setErrors({ submit: result.message || result.error || 'Registration failed' });
         setIsSubmitting(false);
         return;
       }
 
       updateApplicationData(registrationData);
       navigate('/login');
-    } catch (error) {
+    } catch {
       setErrors({ submit: 'Unable to connect to registration service' });
     }
 

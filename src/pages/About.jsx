@@ -1,5 +1,4 @@
-import React from 'react';
-import { Target, Eye, Shield, CheckCircle, Award, Globe, Building2 } from 'lucide-react';
+import { Target, Eye, Shield, CheckCircle, Award, Building2 } from 'lucide-react';
 
 const About = () => {
   return (

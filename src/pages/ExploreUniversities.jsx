@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Globe, X, ChevronLeft, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react';
+import { Search, MapPin, X, ChevronLeft, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react';
 import { universityData } from '../data/universityData';
 import { getDestinationFlagCode, studyDestinationNames, studyDestinations } from '../data/studyDestinations';
 

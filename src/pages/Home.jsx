@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Globe, CheckCircle2, Award, GraduationCap, Users, Star, MapPin, ChevronRight } from 'lucide-react';
-import TestimonialSlider from '../components/TestimonialSlider';
 import { getDestinationLabel, studyDestinations } from '../data/studyDestinations';
 
 const stats = [

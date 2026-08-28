@@ -1,4 +1,3 @@
-import React from 'react';
 import { BookOpen, MapPin, Search, GraduationCap, Plane, Home, DollarSign, Briefcase, FileCheck, CheckCircle2, Globe, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -121,4 +120,3 @@ const Services = () => {
 };
 
 export default Services;
-
