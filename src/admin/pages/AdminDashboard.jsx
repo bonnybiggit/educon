@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Mail,
   AlertCircle,
-  Plus,
   ArrowRight,
   RefreshCcw
 } from 'lucide-react';
@@ -15,14 +14,7 @@ import { getAdminDashboard, getAdminMe } from '../../services/adminApi';
 
 const AdminDashboard = () => {
   const [data, setData] = useState(null);
-  const [admin, setAdmin] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem('educonAdminProfile');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -36,8 +28,8 @@ const AdminDashboard = () => {
         throw new Error(result.message || 'Unable to load dashboard data');
       }
       setData(result.data);
-    } catch (err) {
-      setError(err.message || 'Unable to connect to the server.');
+    } catch {
+      setError('Unable to load dashboard data.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +42,6 @@ const AdminDashboard = () => {
           const profileResult = await getAdminMe();
           if (profileResult.success && profileResult.data?.admin) {
             setAdmin(profileResult.data.admin);
-            sessionStorage.setItem('educonAdminProfile', JSON.stringify(profileResult.data.admin));
           } else {
             navigate('/admin/login', { replace: true });
             return;
@@ -103,7 +94,7 @@ const AdminDashboard = () => {
       {/* Dynamic Greeting */}
       <div>
         <h2 className="text-3xl font-display font-bold text-slate-950">
-          {getGreeting()}, {admin?.fullName || 'Administrator'}
+          {getGreeting()}, {admin?.name || admin?.fullName || 'Administrator'}
         </h2>
         <p className="text-slate-600 text-sm mt-1">
           Here's an overview of your Universe Consult activity.
@@ -204,15 +195,16 @@ const AdminDashboard = () => {
                 {recentStudents.map((student) => (
                   <div
                     key={student.id}
-                    className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-sm transition"
+                    className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-sm transition"
                   >
-                    <div>
-                      <p className="text-sm font-semibold text-slate-950">{student.fullName}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{student.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-950 truncate">{student.fullName}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">{student.email}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">{student.currentStage || 'Initial Consultation'}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <span
-                        className={`text-2xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
                           student.status === 'accepted'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : student.status === 'in review'
@@ -224,7 +216,7 @@ const AdminDashboard = () => {
                       >
                         {student.status || 'pending'}
                       </span>
-                      <p className="text-3xs text-slate-400 mt-1.5">
+                      <p className="text-[10px] text-slate-400 mt-1.5">
                         {new Date(student.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -255,16 +247,16 @@ const AdminDashboard = () => {
                 {recentEnquiries.map((enquiry) => (
                   <div
                     key={enquiry.id}
-                    className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-sm transition"
+                    className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-sm transition"
                   >
-                    <div>
-                      <p className="text-sm font-semibold text-slate-950">{enquiry.name}</p>
-                      <p className="text-xs font-medium text-primary-700 mt-0.5">{enquiry.subject}</p>
-                      <p className="text-3xs text-slate-400 mt-0.5">{enquiry.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-950 truncate">{enquiry.name}</p>
+                      <p className="text-xs font-medium text-primary-700 mt-0.5 truncate">{enquiry.subject}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">{enquiry.email}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <span
-                        className={`text-2xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
                           enquiry.status === 'replied'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : enquiry.status === 'closed'
@@ -276,7 +268,7 @@ const AdminDashboard = () => {
                       >
                         {enquiry.status === 'new' ? 'New' : enquiry.status}
                       </span>
-                      <p className="text-3xs text-slate-400 mt-1.5">
+                      <p className="text-[10px] text-slate-400 mt-1.5">
                         {new Date(enquiry.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -295,12 +287,6 @@ const AdminDashboard = () => {
           <Link
             to="/admin/students"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-900 text-white rounded-xl text-sm font-bold hover:bg-primary-800 transition"
-          >
-            <Plus className="w-4 h-4" /> Add Student
-          </Link>
-          <Link
-            to="/admin/students"
-            className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-xl text-sm font-semibold hover:bg-slate-50 transition"
           >
             View Students
           </Link>

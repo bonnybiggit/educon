@@ -47,6 +47,22 @@ export const updateAdminLastLogin = async (id) => {
   );
 };
 
+export const updateAdminById = async (id, patch) => {
+  if (isUsingMemoryStore()) {
+    const admin = getMemoryStore().admins.find((item) => item._id.toString() === id.toString());
+    if (!admin) return null;
+
+    Object.assign(admin, patch, { updatedAt: new Date() });
+    return admin;
+  }
+
+  return getCollection(env.adminsCollection).findOneAndUpdate(
+    { _id: new ObjectId(id) },
+    { $set: { ...patch, updatedAt: new Date() } },
+    { returnDocument: 'after' }
+  );
+};
+
 export const insertAdmin = async (adminDocument) => {
   if (isUsingMemoryStore()) {
     getMemoryStore().admins.unshift(adminDocument);

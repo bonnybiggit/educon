@@ -33,7 +33,6 @@ const AdminSidebar = ({ onClose }) => {
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      sessionStorage.removeItem('educonAdminProfile');
       navigate('/admin/login');
       if (onClose) onClose();
     }

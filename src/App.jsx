@@ -15,10 +15,10 @@ import Dashboard from './pages/Dashboard'
 import Logout from './pages/Logout'
 import AdminLogin from './admin/pages/AdminLogin'
 import AdminDashboard from './admin/pages/AdminDashboard'
+import AdminStudents from './admin/pages/AdminStudents'
 import AdminRouteGuard from './admin/components/AdminRouteGuard'
 import AdminLayout from './admin/components/AdminLayout'
 import {
-  AdminStudents,
   AdminEnquiries,
   AdminServices,
   AdminTestimonials,

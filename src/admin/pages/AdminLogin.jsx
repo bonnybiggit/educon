@@ -73,7 +73,6 @@ const AdminLogin = () => {
         return;
       }
 
-      sessionStorage.setItem('educonAdminProfile', JSON.stringify(session.data.admin));
       navigate('/admin/dashboard', { replace: true });
     } catch {
       setErrors({ submit: 'Unable to connect to the server. Please try again.' });

@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { findStudentByEmail, formatStudentResponse, insertStudent } from '../models/studentModel.js';
 import { AppError, cleanString, isValidEmail, normalizeEmail, requireFields, sendSuccess } from '../middleware/http.js';
@@ -8,12 +9,10 @@ const requiredRegistrationFields = [
   'password',
   'mobileNumber',
   'country',
-  'passportNumber',
   'targetCountry',
   'targetUniversity',
   'courseOfStudy',
   'intakeSession',
-  'currentStage',
   'consent',
 ];
 
@@ -33,7 +32,12 @@ export const registerStudent = async (req, res) => {
     throw new AppError('Consent is required', 400);
   }
 
+  const now = new Date();
+  const mongoId = new ObjectId();
+
   const studentDocument = {
+    _id: mongoId,
+    id: mongoId.toString(),
     fullName: cleanString(payload.fullName),
     dateOfBirth: cleanString(payload.dateOfBirth),
     email: normalizeEmail(payload.email),
@@ -50,7 +54,7 @@ export const registerStudent = async (req, res) => {
     cgpa: cleanString(payload.cgpa),
     courseOfStudy: cleanString(payload.courseOfStudy),
     intakeSession: cleanString(payload.intakeSession),
-    currentStage: cleanString(payload.currentStage),
+    currentStage: cleanString(payload.currentStage) || 'Initial Consultation',
     status: 'pending',
     consent: Boolean(payload.consent),
     uploads: {
@@ -59,8 +63,8 @@ export const registerStudent = async (req, res) => {
       cv: payload.uploads?.cv || '',
     },
     password: await bcrypt.hash(payload.password, 10),
-    createdAt: new Date(),
-    id: `memory-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    createdAt: now,
+    updatedAt: now,
   };
 
   try {

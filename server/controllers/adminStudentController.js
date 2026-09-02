@@ -1,15 +1,52 @@
 import { ObjectId } from 'mongodb';
-import { findStudents, formatStudentResponse, updateStudentById } from '../models/studentModel.js';
+import { findAdminStudents, formatStudentResponse, getStudentSummary, updateStudentById } from '../models/studentModel.js';
 import { logActivity } from '../services/activityLogService.js';
 import { AppError, cleanString, sendSuccess } from '../middleware/http.js';
 
 const allowedStudentStatuses = ['pending', 'in review', 'accepted', 'declined'];
+const allowedStudentStages = [
+  'Initial Consultation',
+  'Document Preparation',
+  'Application Submitted',
+  'Document Verification',
+  'CAS Letter Processing',
+  'Visa Preparation',
+];
 
-export const getAdminStudents = async (_req, res) => {
-  const students = await findStudents();
+export const getAdminStudents = async (req, res) => {
+  const { search = '', status = 'all', stage = 'all', page = 1, limit = 10 } = req.query;
+  const normalizedStatus = cleanString(status).toLowerCase() || 'all';
+  const normalizedStage = cleanString(stage) || 'all';
+
+  if (normalizedStatus !== 'all' && !allowedStudentStatuses.includes(normalizedStatus)) {
+    throw new AppError('Invalid student status filter', 400);
+  }
+
+  if (normalizedStage !== 'all' && !allowedStudentStages.includes(normalizedStage)) {
+    throw new AppError('Invalid student stage filter', 400);
+  }
+
+  const [studentResult, summary] = await Promise.all([
+    findAdminStudents({ search, status: normalizedStatus, stage: normalizedStage, page, limit }),
+    getStudentSummary(),
+  ]);
+
   sendSuccess(res, {
     message: 'Students fetched',
-    data: { students: students.map((student) => formatStudentResponse(student)) },
+    data: {
+      students: studentResult.students.map((student) => formatStudentResponse(student)),
+      summary,
+      pagination: {
+        page: studentResult.page,
+        limit: studentResult.limit,
+        total: studentResult.total,
+        totalPages: studentResult.totalPages,
+      },
+      filters: {
+        statuses: allowedStudentStatuses,
+        stages: allowedStudentStages,
+      },
+    },
   });
 };
 
@@ -23,7 +60,11 @@ export const updateAdminStudent = async (req, res) => {
   const patch = {};
 
   if (typeof updates.currentStage === 'string' && updates.currentStage.trim() !== '') {
-    patch.currentStage = cleanString(updates.currentStage);
+    const currentStage = cleanString(updates.currentStage);
+    if (!allowedStudentStages.includes(currentStage)) {
+      throw new AppError('Invalid student stage', 400);
+    }
+    patch.currentStage = currentStage;
   }
 
   if (typeof updates.status === 'string' && updates.status.trim() !== '') {

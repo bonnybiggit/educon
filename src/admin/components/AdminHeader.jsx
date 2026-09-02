@@ -15,31 +15,22 @@ const pageTitles = {
 
 const AdminHeader = ({ onMenuToggle }) => {
   const location = useLocation();
-  const [admin, setAdmin] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem('educonAdminProfile');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [admin, setAdmin] = useState(null);
 
   useEffect(() => {
-    if (!admin) {
-      const fetchAdminProfile = async () => {
-        try {
-          const result = await getAdminMe();
-          if (result.success && result.data?.admin) {
-            setAdmin(result.data.admin);
-            sessionStorage.setItem('educonAdminProfile', JSON.stringify(result.data.admin));
-          }
-        } catch (error) {
-          console.error('Failed to retrieve admin details:', error);
+    const fetchAdminProfile = async () => {
+      try {
+        const result = await getAdminMe();
+        if (result.success && result.data?.admin) {
+          setAdmin(result.data.admin);
         }
-      };
-      fetchAdminProfile();
-    }
-  }, [admin]);
+      } catch (error) {
+        console.error('Failed to retrieve admin details:', error);
+      }
+    };
+
+    fetchAdminProfile();
+  }, []);
 
   const currentTitle = pageTitles[location.pathname] || 'Admin Control Panel';
 
@@ -74,13 +65,13 @@ const AdminHeader = ({ onMenuToggle }) => {
       {admin && (
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-slate-900">{admin.fullName || 'Admin User'}</p>
+            <p className="text-sm font-semibold text-slate-900">{admin.name || admin.fullName || 'Admin User'}</p>
             <p className="text-xs font-semibold text-accent-600 uppercase tracking-wider">
               {admin.role || 'Administrator'}
             </p>
           </div>
           <div className="w-10 h-10 rounded-full bg-primary-900 text-white flex items-center justify-center font-bold text-sm border-2 border-accent-400 shadow-sm">
-            {getInitials(admin.fullName)}
+            {getInitials(admin.name || admin.fullName)}
           </div>
         </div>
       )}

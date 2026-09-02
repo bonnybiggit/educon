@@ -13,7 +13,18 @@ export const getAdminMe = () => apiRequest('/api/admin/me');
 
 export const getAdminDashboard = () => apiRequest('/api/admin/dashboard');
 
-export const getAdminStudents = () => apiRequest('/api/admin/students');
+export const getAdminStudents = (params = {}) => {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.set(key, value);
+    }
+  });
+
+  const query = searchParams.toString();
+  return apiRequest(`/api/admin/students${query ? `?${query}` : ''}`);
+};
 
 export const updateAdminStudent = (id, updates) => apiRequest(`/api/admin/students/${id}`, {
   method: 'PATCH',

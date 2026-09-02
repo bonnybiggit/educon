@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { ObjectId } from 'mongodb';
 import { env } from '../config/env.js';
-import { findAdminByEmail, insertAdmin } from '../models/adminModel.js';
+import { findAdminByEmail, insertAdmin, updateAdminById } from '../models/adminModel.js';
 import { isValidEmail, normalizeEmail } from '../middleware/http.js';
 
 export const bootstrapAdminFromEnv = async () => {
@@ -19,7 +19,29 @@ export const bootstrapAdminFromEnv = async () => {
 
   const email = normalizeEmail(env.bootstrapAdminEmail);
   const existingAdmin = await findAdminByEmail(email);
-  if (existingAdmin) return;
+  if (existingAdmin) {
+    const passwordMatches = await bcrypt.compare(env.bootstrapAdminPassword, existingAdmin.passwordHash);
+    const patch = {};
+
+    if (!passwordMatches) {
+      patch.passwordHash = await bcrypt.hash(env.bootstrapAdminPassword, 12);
+    }
+
+    if (!existingAdmin.isActive) {
+      patch.isActive = true;
+    }
+
+    if (env.bootstrapAdminName && existingAdmin.name !== env.bootstrapAdminName) {
+      patch.name = env.bootstrapAdminName;
+    }
+
+    if (Object.keys(patch).length) {
+      await updateAdminById(existingAdmin._id, patch);
+      console.log('Bootstrap admin updated from environment variables.');
+    }
+
+    return;
+  }
 
   const now = new Date();
   await insertAdmin({
