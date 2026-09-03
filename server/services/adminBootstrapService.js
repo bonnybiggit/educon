@@ -1,24 +1,32 @@
 import bcrypt from 'bcryptjs';
 import { ObjectId } from 'mongodb';
-import { env } from '../config/env.js';
-import { findAdminByEmail, insertAdmin, updateAdminById } from '../models/adminModel.js';
+import { env, isProduction } from '../config/env.js';
+import {
+  clearOtherBootstrapAdmins,
+  findAdminByEmail,
+  findBootstrapAdmin,
+  insertAdmin,
+  updateAdminById,
+} from '../models/adminModel.js';
 import { isValidEmail, normalizeEmail } from '../middleware/http.js';
 
 export const bootstrapAdminFromEnv = async () => {
   if (!env.bootstrapAdminEmail || !env.bootstrapAdminPassword) return;
 
   if (!isValidEmail(env.bootstrapAdminEmail)) {
+    if (isProduction) throw new Error('ADMIN_BOOTSTRAP_EMAIL is not a valid email');
     console.warn('ADMIN_BOOTSTRAP_EMAIL is not a valid email. Skipping admin bootstrap.');
     return;
   }
 
   if (env.bootstrapAdminPassword.length < 12) {
+    if (isProduction) throw new Error('ADMIN_BOOTSTRAP_PASSWORD must be at least 12 characters');
     console.warn('ADMIN_BOOTSTRAP_PASSWORD must be at least 12 characters. Skipping admin bootstrap.');
     return;
   }
 
   const email = normalizeEmail(env.bootstrapAdminEmail);
-  const existingAdmin = await findAdminByEmail(email);
+  const existingAdmin = await findAdminByEmail(email) || await findBootstrapAdmin();
   if (existingAdmin) {
     const passwordMatches = await bcrypt.compare(env.bootstrapAdminPassword, existingAdmin.passwordHash);
     const patch = {};
@@ -35,11 +43,24 @@ export const bootstrapAdminFromEnv = async () => {
       patch.name = env.bootstrapAdminName;
     }
 
+    if (existingAdmin.email !== email) {
+      patch.email = email;
+    }
+
+    if (existingAdmin.isBootstrapAdmin !== true) {
+      patch.isBootstrapAdmin = true;
+    }
+
+    if (patch.passwordHash) {
+      patch.passwordChangedAt = new Date();
+    }
+
     if (Object.keys(patch).length) {
       await updateAdminById(existingAdmin._id, patch);
       console.log('Bootstrap admin updated from environment variables.');
     }
 
+    await clearOtherBootstrapAdmins(existingAdmin._id);
     return;
   }
 
@@ -51,6 +72,7 @@ export const bootstrapAdminFromEnv = async () => {
     passwordHash: await bcrypt.hash(env.bootstrapAdminPassword, 12),
     role: 'super_admin',
     isActive: true,
+    isBootstrapAdmin: true,
     createdAt: now,
     updatedAt: now,
     lastLoginAt: null,

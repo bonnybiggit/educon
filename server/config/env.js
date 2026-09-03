@@ -12,6 +12,8 @@ const parseOrigins = (value) => {
     .filter(Boolean);
 };
 
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: process.env.PORT || 5000,
@@ -56,5 +58,13 @@ export const validateProductionEnv = () => {
 
   if (env.jwtSecret.length < 32) {
     throw new Error('JWT_SECRET must be at least 32 characters in production');
+  }
+
+  if (!isValidEmail(env.bootstrapAdminEmail)) {
+    throw new Error('ADMIN_BOOTSTRAP_EMAIL must be a valid email in production');
+  }
+
+  if (env.bootstrapAdminPassword.length < 12) {
+    throw new Error('ADMIN_BOOTSTRAP_PASSWORD must be at least 12 characters in production');
   }
 };

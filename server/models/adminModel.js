@@ -22,6 +22,31 @@ export const findAdminByEmail = async (email) => {
   return getCollection(env.adminsCollection).findOne({ email });
 };
 
+export const findBootstrapAdmin = async () => {
+  if (isUsingMemoryStore()) {
+    return getMemoryStore().admins.find((admin) => admin.isBootstrapAdmin === true) || null;
+  }
+  return getCollection(env.adminsCollection).findOne({ isBootstrapAdmin: true });
+};
+
+export const clearOtherBootstrapAdmins = async (activeAdminId) => {
+  const activeId = activeAdminId.toString();
+  if (isUsingMemoryStore()) {
+    getMemoryStore().admins.forEach((admin) => {
+      if (admin.isBootstrapAdmin === true && admin._id.toString() !== activeId) {
+        admin.isBootstrapAdmin = false;
+        admin.updatedAt = new Date();
+      }
+    });
+    return;
+  }
+
+  await getCollection(env.adminsCollection).updateMany(
+    { isBootstrapAdmin: true, _id: { $ne: new ObjectId(activeId) } },
+    { $set: { isBootstrapAdmin: false, updatedAt: new Date() } }
+  );
+};
+
 export const findAdminById = async (id) => {
   if (isUsingMemoryStore()) {
     return getMemoryStore().admins.find((admin) => admin._id.toString() === id) || null;
