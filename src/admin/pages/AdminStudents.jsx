@@ -481,9 +481,9 @@ const AdminStudents = () => {
                   {[
                     ['Email', selectedStudent.email],
                     ['Phone', selectedStudent.mobileNumber],
-                    ['Destination', selectedStudent.destination],
+                    ['Destination', selectedStudent.targetCountry],
                     ['Target University', selectedStudent.targetUniversity],
-                    ['Course', selectedStudent.course],
+                    ['Course', selectedStudent.courseOfStudy],
                     ['Registered', formatDate(selectedStudent.createdAt)],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-xl bg-slate-50 p-4">

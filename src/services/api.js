@@ -38,3 +38,12 @@ export const apiRequest = async (path, options = {}) => {
 
   return result;
 };
+
+export const getPublishedServices = () => apiRequest('/api/services');
+
+export const getPublishedTestimonials = () => apiRequest('/api/testimonials');
+
+export const createEnquiry = (enquiry) => apiRequest('/api/enquiries', {
+  method: 'POST',
+  body: JSON.stringify(enquiry),
+});

@@ -18,8 +18,5 @@
     Cache-Control = "no-cache"
 
 [env]
-  [env.production]
-    VITE_API_BASE_URL = "https://your-backend-url.com"
-  
   [env.preview]
     VITE_API_BASE_URL = "http://localhost:5000"

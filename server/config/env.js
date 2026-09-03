@@ -20,6 +20,9 @@ export const env = {
   studentsCollection: process.env.MONGODB_STUDENTS_COLLECTION || process.env.MONGODB_COLLECTION || 'students',
   adminsCollection: process.env.MONGODB_ADMINS_COLLECTION || 'admins',
   enquiriesCollection: process.env.MONGODB_ENQUIRIES_COLLECTION || 'enquiries',
+  servicesCollection: process.env.MONGODB_SERVICES_COLLECTION || 'services',
+  testimonialsCollection: process.env.MONGODB_TESTIMONIALS_COLLECTION || 'testimonials',
+  blogCollection: process.env.MONGODB_BLOG_COLLECTION || 'blogPosts',
   activityLogsCollection: process.env.MONGODB_ACTIVITY_LOGS_COLLECTION || 'activityLogs',
   corsOrigins: parseOrigins(process.env.CORS_ORIGINS || process.env.CORS_ORIGIN),
   jwtSecret: process.env.JWT_SECRET,
@@ -31,3 +34,27 @@ export const env = {
 };
 
 export const isProduction = env.nodeEnv === 'production';
+
+export const validateProductionEnv = () => {
+  if (!isProduction) return;
+
+  const requiredVariables = [
+    ['MONGODB_URI', env.mongoUri],
+    ['MONGODB_DB_NAME', process.env.MONGODB_DB_NAME],
+    ['JWT_SECRET', env.jwtSecret],
+    ['ADMIN_BOOTSTRAP_EMAIL', env.bootstrapAdminEmail],
+    ['ADMIN_BOOTSTRAP_PASSWORD', env.bootstrapAdminPassword],
+    ['CORS_ORIGINS', process.env.CORS_ORIGINS || process.env.CORS_ORIGIN],
+  ];
+  const missingVariables = requiredVariables
+    .filter(([, value]) => !String(value || '').trim())
+    .map(([name]) => name);
+
+  if (missingVariables.length) {
+    throw new Error(`Missing production environment variables: ${missingVariables.join(', ')}`);
+  }
+
+  if (env.jwtSecret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters in production');
+  }
+};

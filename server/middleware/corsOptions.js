@@ -32,7 +32,10 @@ export const corsOptions = {
       return;
     }
 
-    callback(new Error('Origin is not allowed by CORS'));
+    const error = new Error('Origin is not allowed by CORS');
+    error.statusCode = 403;
+    error.isOperational = true;
+    callback(error);
   },
   credentials: true,
 };

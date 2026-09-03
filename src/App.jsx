@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import WhatsAppButton from './components/WhatsAppButton'
@@ -16,15 +16,13 @@ import Logout from './pages/Logout'
 import AdminLogin from './admin/pages/AdminLogin'
 import AdminDashboard from './admin/pages/AdminDashboard'
 import AdminStudents from './admin/pages/AdminStudents'
+import AdminEnquiries from './admin/pages/AdminEnquiries'
+import AdminServices from './admin/pages/AdminServices'
+import AdminTestimonials from './admin/pages/AdminTestimonials'
+import AdminBlog from './admin/pages/AdminBlog'
+import AdminSettings from './admin/pages/AdminSettings'
 import AdminRouteGuard from './admin/components/AdminRouteGuard'
 import AdminLayout from './admin/components/AdminLayout'
-import {
-  AdminEnquiries,
-  AdminServices,
-  AdminTestimonials,
-  AdminBlog,
-  AdminSettings
-} from './admin/pages/AdminPlaceholders'
 import { PortalProvider } from './context/PortalContext'
 
 const MainSiteContent = () => {
@@ -77,6 +75,7 @@ const MainSiteContent = () => {
 const AdminContent = () => {
   return (
     <Routes>
+      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route
         path="/admin/dashboard"

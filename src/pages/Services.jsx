@@ -1,21 +1,54 @@
 import { BookOpen, MapPin, Search, GraduationCap, Plane, Home, DollarSign, Briefcase, FileCheck, CheckCircle2, Globe, Award } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getPublishedServices } from '../services/api';
+
+const serviceIcons = {
+  'Expert Consultation': BookOpen,
+  'University Admissions': GraduationCap,
+  'Compliance Checks': FileCheck,
+  'Interview Preparation': Search,
+  'Payment Guidance': DollarSign,
+  'Proof of Funds': CheckCircle2,
+  'Visa Assistance': Plane,
+  Accommodation: Home,
+  'Airport Pickup': MapPin,
+  'Job Searches': Briefcase,
+  'Global Consulting': Globe,
+  Scholarships: Award,
+};
+
+const getServiceIcon = (title) => {
+  const Icon = serviceIcons[title] || Briefcase;
+  return <Icon className="w-5 h-5" />;
+};
 
 const Services = () => {
-  const services = [
-    { icon: <BookOpen className="w-5 h-5" />, title: 'Expert Consultation', desc: 'Personalized advice to kickstart your journey.' },
-    { icon: <GraduationCap className="w-5 h-5" />, title: 'University Admissions', desc: 'Handling BSC, MSC & MRES applications globally.' },
-    { icon: <FileCheck className="w-5 h-5" />, title: 'Compliance Checks', desc: 'Ensuring your documents meet all strict requirements.' },
-    { icon: <Search className="w-5 h-5" />, title: 'Interview Preparation', desc: 'One-on-one preCAS and UKVI interview prep.' },
-    { icon: <DollarSign className="w-5 h-5" />, title: 'Payment Guidance', desc: 'Secure guidance on making payments to schools.' },
-    { icon: <CheckCircle2 className="w-5 h-5" />, title: 'Proof of Funds', desc: 'Detailed financial checklist for visa success.' },
-    { icon: <Plane className="w-5 h-5" />, title: 'Visa Assistance', desc: 'Step-by-step guidance through the visa process.' },
-    { icon: <Home className="w-5 h-5" />, title: 'Accommodation', desc: 'Finding the right home (UK students only).' },
-    { icon: <MapPin className="w-5 h-5" />, title: 'Airport Pickup', desc: 'Warm welcome upon arrival (UK students only).' },
-    { icon: <Briefcase className="w-5 h-5" />, title: 'Job Searches', desc: 'Helping you find part-time work (UK students only).' },
-    { icon: <Globe className="w-5 h-5" />, title: 'Global Consulting', desc: 'Holistic consulting across 14+ countries.' },
-    { icon: <Award className="w-5 h-5" />, title: 'Scholarships', desc: 'Identifying financial aid opportunities for your profile.' },
-  ];
+  const [services, setServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadServices = async () => {
+      try {
+        const result = await getPublishedServices();
+        if (isMounted && result.success) {
+          setServices(result.data?.services || []);
+        }
+      } catch {
+        if (isMounted) setServices([]);
+      } finally {
+        if (isMounted) setLoadingServices(false);
+      }
+    };
+
+    loadServices();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -74,13 +107,17 @@ const Services = () => {
 
         {/* Compact Services Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {services.map((service, index) => (
-            <div key={index} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 group hover:border-primary-200">
+          {loadingServices ? (
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-sm text-gray-600">
+              Loading services...
+            </div>
+          ) : services.map((service) => (
+            <div key={service.id} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 group hover:border-primary-200">
               <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center text-primary-600 mb-4 group-hover:bg-primary-600 group-hover:text-white transition-colors">
-                {service.icon}
+                {getServiceIcon(service.name)}
               </div>
-              <h3 className="text-lg font-bold font-display text-primary-900 mb-2">{service.title}</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">{service.desc}</p>
+              <h3 className="text-lg font-bold font-display text-primary-900 mb-2">{service.name}</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">{service.description}</p>
             </div>
           ))}
         </div>

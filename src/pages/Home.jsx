@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Globe, CheckCircle2, Award, GraduationCap, Users, Star, MapPin, ChevronRight } from 'lucide-react';
 import { getDestinationLabel, studyDestinations } from '../data/studyDestinations';
+import { getPublishedServices, getPublishedTestimonials } from '../services/api';
 
 const stats = [
   { value: '5+', label: 'Years of Excellence' },
@@ -9,24 +11,77 @@ const stats = [
   { value: '100%', label: 'Success Rate' },
 ];
 
-const services = [
-  { icon: <GraduationCap className="w-5 h-5" />, title: 'University Admissions', desc: 'BSC, MSC & MRES applications handled globally.' },
-  { icon: <CheckCircle2 className="w-5 h-5" />, title: 'Visa Assistance', desc: 'Full visa guidance, compliance & interview prep.' },
-  { icon: <Globe className="w-5 h-5" />, title: 'Study Abroad', desc: 'Consulting across 14+ countries worldwide.' },
-  { icon: <Award className="w-5 h-5" />, title: 'Scholarships', desc: 'Identifying financial aid opportunities for you.' },
-  { icon: <Users className="w-5 h-5" />, title: 'Pre-departure', desc: 'Accommodation, airport pickup & job searches.' },
-  { icon: <MapPin className="w-5 h-5" />, title: 'Free Consultation', desc: 'UK applicants get ALL services 100% FREE.' },
-];
+const serviceIcons = {
+  'Expert Consultation': MapPin,
+  'University Admissions': GraduationCap,
+  'Compliance Checks': CheckCircle2,
+  'Interview Preparation': CheckCircle2,
+  'Payment Guidance': CheckCircle2,
+  'Proof of Funds': CheckCircle2,
+  'Visa Assistance': CheckCircle2,
+  Accommodation: Users,
+  'Airport Pickup': MapPin,
+  'Job Searches': Users,
+  'Global Consulting': Globe,
+  Scholarships: Award,
+};
 
-const testimonials = [
-  { name: 'Korede', text: 'I got my admission for masters by research and it allowed me to bring my family with me. I did not pay any service fees. Excellent service, Universe Consults' },
-  { name: 'Doreen', text: 'Seamlessly the best Educational consultancy. I rate them 5/5.' },
-  { name: 'Jesuseun', text: 'I will recommend Universe Consults any day and any time. Thumps up.' },
-  { name: 'Alex', text: 'You need personalised services? Think Universe Consults.' },
-  { name: 'Nneka', text: 'I have 3rd class and everyone said I cannot study masters abroad. Universe Consults helped me secure my msc admission and assisted until I resumed in September 2025.' },
-];
+const getServiceIcon = (title) => {
+  const Icon = serviceIcons[title] || GraduationCap;
+  return <Icon className="w-5 h-5" />;
+};
 
 const Home = () => {
+  const [services, setServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [testimonials, setTestimonials] = useState([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadServices = async () => {
+      try {
+        const result = await getPublishedServices();
+        if (isMounted && result.success) {
+          setServices((result.data?.services || []).slice(0, 6));
+        }
+      } catch {
+        if (isMounted) setServices([]);
+      } finally {
+        if (isMounted) setLoadingServices(false);
+      }
+    };
+
+    loadServices();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTestimonials = async () => {
+      try {
+        const result = await getPublishedTestimonials();
+        if (isMounted && result.success) {
+          setTestimonials(result.data?.testimonials || []);
+        }
+      } catch {
+        if (isMounted) setTestimonials([]);
+      } finally {
+        if (isMounted) setLoadingTestimonials(false);
+      }
+    };
+
+    loadTestimonials();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="bg-white overflow-x-hidden">
@@ -194,13 +249,17 @@ const Home = () => {
             <p className="text-gray-500 text-sm max-w-xl mx-auto">From first consultation to your first day on campus — we've got you covered every step of the way.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {services.map((s, i) => (
-              <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all group">
+            {loadingServices ? (
+              <div className="bg-white p-5 rounded-xl border border-gray-100 text-sm text-gray-500">
+                Loading services...
+              </div>
+            ) : services.map((s) => (
+              <div key={s.id} className="bg-white p-5 rounded-xl border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all group">
                 <div className="w-9 h-9 bg-primary-50 rounded-lg flex items-center justify-center text-primary-600 mb-3 group-hover:bg-primary-600 group-hover:text-white transition-colors">
-                  {s.icon}
+                  {getServiceIcon(s.name)}
                 </div>
-                <h3 className="font-bold text-primary-900 text-sm mb-1">{s.title}</h3>
-                <p className="text-gray-500 text-xs leading-relaxed">{s.desc}</p>
+                <h3 className="font-bold text-primary-900 text-sm mb-1">{s.name}</h3>
+                <p className="text-gray-500 text-xs leading-relaxed">{s.description}</p>
               </div>
             ))}
           </div>
@@ -278,7 +337,11 @@ const Home = () => {
             <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 sm:w-20 bg-gradient-to-l from-primary-50 to-transparent" />
 
             <div className="testimonial-marquee flex w-max">
-              {Array.from({ length: 2 }).map((_, setIndex) => (
+              {loadingTestimonials ? (
+                <div className="testimonial-card w-[270px] sm:w-[320px] shrink-0 rounded-[24px] border border-primary-100 bg-white p-5 sm:p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+                  <p className="text-sm text-gray-500">Loading testimonials...</p>
+                </div>
+              ) : Array.from({ length: 2 }).map((_, setIndex) => (
                 <div key={setIndex} className="flex shrink-0">
                   {testimonials.map((item, idx) => (
                     <div
@@ -293,6 +356,7 @@ const Home = () => {
                           </div>
                           <div>
                             <h3 className="text-sm font-bold text-gray-900">{item.name}</h3>
+                            {item.role && <p className="mt-0.5 text-xs text-gray-500">{item.role}</p>}
                             <div className="flex items-center gap-1 mt-1 text-amber-400">
                               {Array.from({ length: 5 }).map((_, starIdx) => (
                                 <Star key={starIdx} className="w-3.5 h-3.5 fill-current" />

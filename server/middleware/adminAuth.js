@@ -53,6 +53,27 @@ const getBearerToken = (req) => {
   return header.slice(7).trim();
 };
 
+const isTrustedOrigin = (origin) => {
+  if (env.corsOrigins.includes(origin)) return true;
+  if (isProduction) return false;
+
+  try {
+    const { hostname, protocol } = new URL(origin);
+    return ['http:', 'https:'].includes(protocol)
+      && (hostname === 'localhost' || hostname === '127.0.0.1' || /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(hostname));
+  } catch {
+    return false;
+  }
+};
+
+const requireTrustedOrigin = (req) => {
+  if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)) return;
+  const origin = req.headers.origin;
+  if (origin && !isTrustedOrigin(origin)) {
+    throw new AppError('Request origin is not allowed', 403);
+  }
+};
+
 export const createAdminToken = (admin) => {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'HS256', typ: 'JWT' };
@@ -121,11 +142,16 @@ export const verifyAdminToken = (token) => {
 };
 
 export const requireAdmin = asyncHandler(async (req, _res, next) => {
+  requireTrustedOrigin(req);
   const payload = verifyAdminToken(getCookieToken(req) || getBearerToken(req));
   const admin = await findAdminById(payload.sub);
 
   if (!admin || !admin.isActive) {
     throw new AppError('Admin account is inactive or unavailable', 403);
+  }
+
+  if (admin.passwordChangedAt && payload.iat && new Date(admin.passwordChangedAt).getTime() >= payload.iat * 1000) {
+    throw new AppError('Authentication token is no longer valid', 401);
   }
 
   req.admin = sanitizeAdmin(admin);

@@ -11,6 +11,18 @@ export const adminLogout = () => apiRequest('/api/admin/logout', {
 
 export const getAdminMe = () => apiRequest('/api/admin/me');
 
+export const getAdminSettings = () => apiRequest('/api/admin/settings');
+
+export const updateAdminProfile = (profile) => apiRequest('/api/admin/profile', {
+  method: 'PATCH',
+  body: JSON.stringify(profile),
+});
+
+export const updateAdminPassword = (passwords) => apiRequest('/api/admin/password', {
+  method: 'PATCH',
+  body: JSON.stringify(passwords),
+});
+
 export const getAdminDashboard = () => apiRequest('/api/admin/dashboard');
 
 export const getAdminStudents = (params = {}) => {
@@ -41,5 +53,59 @@ export const updateAdminEnquiry = (id, updates) => apiRequest(`/api/admin/enquir
 });
 
 export const deleteAdminEnquiry = (id) => apiRequest(`/api/admin/enquiries/${id}`, {
+  method: 'DELETE',
+});
+
+export const getAdminServices = () => apiRequest('/api/admin/services');
+
+export const getAdminService = (id) => apiRequest(`/api/admin/services/${id}`);
+
+export const createAdminService = (service) => apiRequest('/api/admin/services', {
+  method: 'POST',
+  body: JSON.stringify(service),
+});
+
+export const updateAdminService = (id, updates) => apiRequest(`/api/admin/services/${id}`, {
+  method: 'PATCH',
+  body: JSON.stringify(updates),
+});
+
+export const deleteAdminService = (id) => apiRequest(`/api/admin/services/${id}`, {
+  method: 'DELETE',
+});
+
+export const getAdminTestimonials = () => apiRequest('/api/admin/testimonials');
+
+export const getAdminTestimonial = (id) => apiRequest(`/api/admin/testimonials/${id}`);
+
+export const createAdminTestimonial = (testimonial) => apiRequest('/api/admin/testimonials', {
+  method: 'POST',
+  body: JSON.stringify(testimonial),
+});
+
+export const updateAdminTestimonial = (id, updates) => apiRequest(`/api/admin/testimonials/${id}`, {
+  method: 'PATCH',
+  body: JSON.stringify(updates),
+});
+
+export const deleteAdminTestimonial = (id) => apiRequest(`/api/admin/testimonials/${id}`, {
+  method: 'DELETE',
+});
+
+export const getAdminBlogPosts = () => apiRequest('/api/admin/blog');
+
+export const getAdminBlogPost = (id) => apiRequest(`/api/admin/blog/${id}`);
+
+export const createAdminBlogPost = (post) => apiRequest('/api/admin/blog', {
+  method: 'POST',
+  body: JSON.stringify(post),
+});
+
+export const updateAdminBlogPost = (id, updates) => apiRequest(`/api/admin/blog/${id}`, {
+  method: 'PATCH',
+  body: JSON.stringify(updates),
+});
+
+export const deleteAdminBlogPost = (id) => apiRequest(`/api/admin/blog/${id}`, {
   method: 'DELETE',
 });

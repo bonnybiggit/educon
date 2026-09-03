@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin, Send, MessageCircle, CheckCircle, Clock } from 'lucide-react';
+import { createEnquiry } from '../services/api';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -11,13 +12,20 @@ const Contact = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('submitting');
-    setTimeout(() => {
+    try {
+      const result = await createEnquiry(formData);
+      if (!result.success) {
+        setStatus('error');
+        return;
+      }
       setStatus('success');
       setFormData({ name: '', email: '', phone: '', country: '', level: '', service: '', message: '' });
-    }, 1500);
+    } catch {
+      setStatus('error');
+    }
   };
 
   const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm bg-white";
@@ -153,6 +161,11 @@ const Contact = () => {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {status === 'error' && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                    We could not send your enquiry. Please try again.
+                  </p>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Full Name *</label>
