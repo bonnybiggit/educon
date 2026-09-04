@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { connectDatabase } from './config/database.js';
-import { env, validateProductionEnv } from './config/env.js';
+import { env, isProduction, validateProductionEnv } from './config/env.js';
 import { corsOptions } from './middleware/corsOptions.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -17,6 +19,9 @@ import { bootstrapServices } from './services/serviceBootstrapService.js';
 import { bootstrapTestimonials } from './services/testimonialBootstrapService.js';
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientDistPath = path.resolve(__dirname, '..', 'dist');
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '8mb' }));
@@ -28,6 +33,18 @@ app.use('/api', blogRoutes);
 app.use('/api', serviceRoutes);
 app.use('/api', testimonialRoutes);
 app.use('/api/admin', adminRoutes);
+
+if (isProduction) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      next();
+      return;
+    }
+
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 app.use(notFound);
 app.use(errorHandler);

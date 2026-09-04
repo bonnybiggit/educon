@@ -33,6 +33,40 @@ npm start
 
 The frontend sends registration data to `http://localhost:5000/api/register` and login requests to `http://localhost:5000/api/login`.
 
+## Deploying to Render
+
+This project can run as one Render Web Service. The server serves the built React app from `dist` and the API from `/api`, which keeps admin login cookies on the same domain.
+
+1. Push this repository to GitHub.
+2. In Render, create a new **Blueprint** from the repository, or create a **Web Service** manually.
+3. Use these commands if creating the service manually:
+
+```bash
+npm install && npm run build
+npm start
+```
+
+4. Add these Render environment variables:
+
+```bash
+MONGODB_URI=your MongoDB Atlas connection string
+MONGODB_DB_NAME=educon
+JWT_SECRET=a long random value at least 32 characters
+ADMIN_BOOTSTRAP_NAME=Super Admin
+ADMIN_BOOTSTRAP_EMAIL=your admin email
+ADMIN_BOOTSTRAP_PASSWORD=a strong password at least 12 characters
+```
+
+Render automatically provides `PORT` and `RENDER_EXTERNAL_URL`. The app uses `RENDER_EXTERNAL_URL` as an allowed CORS origin, so `CORS_ORIGINS` is only needed if the frontend is hosted on a different domain.
+
+After deploy:
+
+- Public site: `https://your-service.onrender.com`
+- Admin login: `https://your-service.onrender.com/admin/login`
+- Health check: `https://your-service.onrender.com/api/health`
+
+Do not set `VITE_API_BASE_URL` for the single-service Render deployment. Leaving it empty makes the frontend call `/api/...` on the same Render domain.
+
 ## Deploying to Netlify
 
 ### Frontend Deployment

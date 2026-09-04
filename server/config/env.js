@@ -12,6 +12,17 @@ const parseOrigins = (value) => {
     .filter(Boolean);
 };
 
+const getCorsOrigins = () => {
+  const configuredOrigins = parseOrigins(process.env.CORS_ORIGINS || process.env.CORS_ORIGIN);
+  const renderExternalUrl = process.env.RENDER_EXTERNAL_URL?.trim();
+
+  if (renderExternalUrl && !configuredOrigins.includes(renderExternalUrl)) {
+    return [...configuredOrigins, renderExternalUrl];
+  }
+
+  return configuredOrigins;
+};
+
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
 
 export const env = {
@@ -26,7 +37,7 @@ export const env = {
   testimonialsCollection: process.env.MONGODB_TESTIMONIALS_COLLECTION || 'testimonials',
   blogCollection: process.env.MONGODB_BLOG_COLLECTION || 'blogPosts',
   activityLogsCollection: process.env.MONGODB_ACTIVITY_LOGS_COLLECTION || 'activityLogs',
-  corsOrigins: parseOrigins(process.env.CORS_ORIGINS || process.env.CORS_ORIGIN),
+  corsOrigins: getCorsOrigins(),
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresInSeconds: Number(process.env.JWT_EXPIRES_IN_SECONDS || 60 * 60 * 8),
   adminCookieName: process.env.ADMIN_COOKIE_NAME || 'educon_admin_token',
@@ -46,7 +57,7 @@ export const validateProductionEnv = () => {
     ['JWT_SECRET', env.jwtSecret],
     ['ADMIN_BOOTSTRAP_EMAIL', env.bootstrapAdminEmail],
     ['ADMIN_BOOTSTRAP_PASSWORD', env.bootstrapAdminPassword],
-    ['CORS_ORIGINS', process.env.CORS_ORIGINS || process.env.CORS_ORIGIN],
+    ['CORS_ORIGINS or RENDER_EXTERNAL_URL', process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || process.env.RENDER_EXTERNAL_URL],
   ];
   const missingVariables = requiredVariables
     .filter(([, value]) => !String(value || '').trim())
