@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, HelpCircle, MessageCircle } from 'lucide-react';
+import Seo from '../components/Seo';
+import { publicSeo } from '../seoConfig';
 
 const faqs = [
   {
@@ -39,6 +41,7 @@ const FAQs = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      <Seo {...publicSeo.faqs} />
       {/* Compact header */}
       <div
         className="relative py-12 text-center text-white"

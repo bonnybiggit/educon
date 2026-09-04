@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Search, MapPin, X, ChevronLeft, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react';
 import { universityData } from '../data/universityData';
 import { getDestinationFlagCode, studyDestinationNames, studyDestinations } from '../data/studyDestinations';
+import Seo from '../components/Seo';
+import { publicSeo } from '../seoConfig';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -11,20 +13,6 @@ const ExploreUniversities = () => {
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUni, setSelectedUni] = useState(null);
-
-  // Set page title and meta description
-  useEffect(() => {
-    document.title = "Explore Universities | Universe Consults";
-    
-    // Add meta description dynamically
-    let metaDesc = document.querySelector('meta[name="description"]');
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta');
-      metaDesc.name = 'description';
-      document.getElementsByTagName('head')[0].appendChild(metaDesc);
-    }
-    metaDesc.content = "Explore premium partner universities worldwide with Universe Educational Consultancy. Filter by country and study levels to find your perfect academic fit.";
-  }, []);
 
   // Reset page when filters change
   useEffect(() => {
@@ -136,6 +124,7 @@ const ExploreUniversities = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans">
+      <Seo {...publicSeo.exploreUniversities} />
       {/* --- HERO / PAGE HEADER --- */}
       <header
         className="relative py-14 md:py-16"

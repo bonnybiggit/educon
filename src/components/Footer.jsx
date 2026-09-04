@@ -98,8 +98,8 @@ const Footer = () => {
             &copy; {new Date().getFullYear()} Universe Educational Consultancy Limited. All rights reserved.
           </p>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+            <span className="hover:text-white transition-colors">Privacy Policy</span>
+            <span className="hover:text-white transition-colors">Terms of Service</span>
           </div>
         </div>
       </div>

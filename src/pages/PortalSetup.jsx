@@ -5,6 +5,7 @@ import { User, Check } from 'lucide-react';
 import { universityData } from '../data/universityData';
 import { studyDestinationNames } from '../data/studyDestinations';
 import { registerStudent } from '../services/studentApi';
+import Seo from '../components/Seo';
 
 const countries = [
   { code: 'NG', name: 'Nigeria', flag: '🇳🇬', dial: '234' },
@@ -236,6 +237,12 @@ const PortalSetup = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 py-12 px-4">
+      <Seo
+        title="Student Registration | Universe Consult"
+        description="Create a private student portal profile with Universe Consult."
+        pathname="/portal/setup"
+        noIndex
+      />
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-10">
           <div className="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
@@ -325,7 +332,7 @@ const PortalSetup = () => {
                     <div className="flex items-center gap-4">
                       <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                         {formData.profilePicture ? (
-                          <img src={formData.profilePicture} alt="profile" className="w-full h-full object-cover" />
+                          <img src={formData.profilePicture} alt="Student profile preview" className="w-full h-full object-cover" />
                         ) : (
                           <div className="text-sm text-gray-500">No photo</div>
                         )}
@@ -453,7 +460,7 @@ const PortalSetup = () => {
                       <input type="checkbox" name="consent" checked={formData.consent} onChange={handleChange} className="w-5 h-5 border-2 border-gray-300 rounded transition-all checked:bg-primary-600 checked:border-primary-600 appearance-none" />
                       {formData.consent && <Check className="absolute inset-0 w-3 h-3 m-auto text-white pointer-events-none" />}
                     </div>
-                    <span className="text-sm text-gray-600">By clicking Submit, you consent to your data being handled as per our <a href="#" className="text-primary-600 underline">Privacy Policy</a></span>
+                    <span className="text-sm text-gray-600">By clicking Submit, you consent to your data being handled as per our <span className="text-primary-600 underline">Privacy Policy</span></span>
                   </label>
                   {errors.consent && <p className="mt-2 text-sm text-red-600">{errors.consent}</p>}
                 </div>

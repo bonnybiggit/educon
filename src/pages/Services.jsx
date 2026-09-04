@@ -2,6 +2,8 @@ import { BookOpen, MapPin, Search, GraduationCap, Plane, Home, DollarSign, Brief
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPublishedServices } from '../services/api';
+import Seo from '../components/Seo';
+import { publicSeo } from '../seoConfig';
 
 const serviceIcons = {
   'Expert Consultation': BookOpen,
@@ -52,6 +54,7 @@ const Services = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      <Seo {...publicSeo.services} />
       {/* Compact Hero */}
       <div
         className="relative py-12"

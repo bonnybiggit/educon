@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /login
+Disallow: /logout
+Disallow: /portal/
+
+Sitemap: https://universeconsults.netlify.app/sitemap.xml

@@ -27,6 +27,7 @@ import AdminRouteGuard from './admin/components/AdminRouteGuard'
 import AdminLayout from './admin/components/AdminLayout'
 import { ADMIN_ROLE } from './admin/permissions'
 import { PortalProvider } from './context/PortalContext'
+import Seo from './components/Seo'
 
 const MainSiteContent = () => {
   const location = useLocation()
@@ -77,100 +78,108 @@ const MainSiteContent = () => {
 
 const AdminContent = () => {
   return (
-    <Routes>
-      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route
-        path="/admin/dashboard"
-        element={(
-          <AdminRouteGuard>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminDashboard />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
+    <>
+      <Seo
+        title="Admin Portal | Universe Consult"
+        description="Private Universe Consult administration portal."
+        pathname="/admin"
+        noIndex
       />
-      <Route
-        path="/admin/students"
-        element={(
-          <AdminRouteGuard>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminStudents />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
-      />
-      <Route
-        path="/admin/enquiries"
-        element={(
-          <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminEnquiries />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
-      />
-      <Route
-        path="/admin/services"
-        element={(
-          <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminServices />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
-      />
-      <Route
-        path="/admin/testimonials"
-        element={(
-          <AdminRouteGuard>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminTestimonials />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
-      />
-      <Route
-        path="/admin/blog"
-        element={(
-          <AdminRouteGuard>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminBlog />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
-      />
-      <Route
-        path="/admin/admins"
-        element={(
-          <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminManagement />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
-      />
-      <Route
-        path="/admin/activity-logs"
-        element={(
-          <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminActivityLogs />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
-      />
-      <Route
-        path="/admin/settings"
-        element={(
-          <AdminRouteGuard>
-            {(admin) => <AdminLayout admin={admin}>
-              <AdminSettings />
-            </AdminLayout>}
-          </AdminRouteGuard>
-        )}
-      />
-    </Routes>
+      <Routes>
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin/dashboard"
+          element={(
+            <AdminRouteGuard>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminDashboard />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+        <Route
+          path="/admin/students"
+          element={(
+            <AdminRouteGuard>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminStudents />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+        <Route
+          path="/admin/enquiries"
+          element={(
+            <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminEnquiries />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+        <Route
+          path="/admin/services"
+          element={(
+            <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminServices />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+        <Route
+          path="/admin/testimonials"
+          element={(
+            <AdminRouteGuard>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminTestimonials />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+        <Route
+          path="/admin/blog"
+          element={(
+            <AdminRouteGuard>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminBlog />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+        <Route
+          path="/admin/admins"
+          element={(
+            <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminManagement />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+        <Route
+          path="/admin/activity-logs"
+          element={(
+            <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminActivityLogs />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+        <Route
+          path="/admin/settings"
+          element={(
+            <AdminRouteGuard>
+              {(admin) => <AdminLayout admin={admin}>
+                <AdminSettings />
+              </AdminLayout>}
+            </AdminRouteGuard>
+          )}
+        />
+      </Routes>
+    </>
   )
 }
 

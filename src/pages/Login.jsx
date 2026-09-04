@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usePortal } from '../context/PortalContext';
 import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
+import Seo from '../components/Seo';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -48,6 +49,12 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center px-4 py-12">
+      <Seo
+        title="Student Login | Universe Consult"
+        description="Sign in to the private Universe Consult student portal."
+        pathname="/login"
+        noIndex
+      />
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">

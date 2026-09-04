@@ -1,8 +1,11 @@
 import { Target, Eye, Shield, CheckCircle, Award, Building2 } from 'lucide-react';
+import Seo from '../components/Seo';
+import { publicSeo } from '../seoConfig';
 
 const About = () => {
   return (
     <div className="bg-white overflow-hidden">
+      <Seo {...publicSeo.about} />
       {/* Dynamic Hero Section */}
       <div
         className="relative py-12"

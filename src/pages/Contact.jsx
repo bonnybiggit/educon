@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin, Send, MessageCircle, CheckCircle, Clock } from 'lucide-react';
 import { createEnquiry } from '../services/api';
+import Seo from '../components/Seo';
+import { publicSeo } from '../seoConfig';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -32,6 +34,7 @@ const Contact = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      <Seo {...publicSeo.contact} />
 
       {/* Compact header */}
       <div

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Globe, CheckCircle2, Award, GraduationCap, Users, Star, MapPin, ChevronRight } from 'lucide-react';
 import { getDestinationLabel, studyDestinations } from '../data/studyDestinations';
 import { getPublishedServices, getPublishedTestimonials } from '../services/api';
+import Seo from '../components/Seo';
+import { organizationJsonLd, publicSeo } from '../seoConfig';
 
 const stats = [
   { value: '5+', label: 'Years of Excellence' },
@@ -85,6 +87,7 @@ const Home = () => {
 
   return (
     <div className="bg-white overflow-x-hidden">
+      <Seo {...publicSeo.home} jsonLd={organizationJsonLd} />
 
       {/* ── HERO ── */}
       <section className="relative bg-primary-900 overflow-hidden min-h-[90vh] flex items-center">

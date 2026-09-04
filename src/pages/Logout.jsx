@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import Seo from '../components/Seo';
 
 const Logout = () => {
   const { state } = useLocation();
@@ -6,8 +7,14 @@ const Logout = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white py-12 px-4">
+      <Seo
+        title="Logged Out | Universe Consult"
+        description="You have signed out of Universe Consult."
+        pathname="/logout"
+        noIndex
+      />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        <img src="/logo.png" alt="Logo" className="h-20 mx-auto mb-6" />
+        <img src="/logo.png" alt="Universe Consult Logo" className="h-20 mx-auto mb-6" />
         <h2 className="text-2xl font-bold text-gray-900 mb-2">{name ? `Goodbye, ${name}` : 'You have successfully logged out'}</h2>
         <p className="text-gray-600 mb-6">{name ? 'Thank you for using our portal — we hope to see you again soon.' : 'Thanks for visiting — we hope to see you again soon.'}</p>
         <div className="flex justify-center gap-4">

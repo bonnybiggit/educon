@@ -2,6 +2,7 @@ import { usePortal } from '../context/PortalContext';
 import { LogOut, User, GraduationCap, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import Seo from '../components/Seo';
 
 const MilestoneStep = ({ milestone, status }) => {
   const getStatusStyles = () => {
@@ -91,6 +92,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <Seo
+        title="Student Dashboard | Universe Consult"
+        description="Private Universe Consult student dashboard."
+        pathname="/dashboard"
+        noIndex
+      />
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -100,7 +107,7 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-4">
             {applicationData.profilePicture && (
-              <img src={applicationData.profilePicture} alt="avatar" className="w-12 h-12 rounded-full object-cover border" />
+              <img src={applicationData.profilePicture} alt="Student profile photo" className="w-12 h-12 rounded-full object-cover border" />
             )}
             <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-primary-600 transition-colors">
               <LogOut className="w-5 h-5" />
