@@ -2,15 +2,19 @@ import bcrypt from 'bcryptjs';
 import { ObjectId } from 'mongodb';
 import { env, isProduction } from '../config/env.js';
 import {
+  ADMIN_ROLE,
   clearOtherBootstrapAdmins,
   findAdminByEmail,
   findBootstrapAdmin,
   insertAdmin,
+  migrateAdminRoles,
   updateAdminById,
 } from '../models/adminModel.js';
 import { isValidEmail, normalizeEmail } from '../middleware/http.js';
 
 export const bootstrapAdminFromEnv = async () => {
+  await migrateAdminRoles(env.bootstrapAdminEmail);
+
   if (!env.bootstrapAdminEmail || !env.bootstrapAdminPassword) return;
 
   if (!isValidEmail(env.bootstrapAdminEmail)) {
@@ -47,9 +51,9 @@ export const bootstrapAdminFromEnv = async () => {
       patch.email = email;
     }
 
-    if (existingAdmin.isBootstrapAdmin !== true) {
-      patch.isBootstrapAdmin = true;
-    }
+    if (existingAdmin.role !== ADMIN_ROLE.SUPER_ADMIN) patch.role = ADMIN_ROLE.SUPER_ADMIN;
+    if (existingAdmin.isBootstrapAdmin !== true) patch.isBootstrapAdmin = true;
+    if (existingAdmin.passwordChangeRequired) patch.passwordChangeRequired = false;
 
     if (patch.passwordHash) {
       patch.passwordChangedAt = new Date();
@@ -70,9 +74,10 @@ export const bootstrapAdminFromEnv = async () => {
     name: env.bootstrapAdminName || 'Super Admin',
     email,
     passwordHash: await bcrypt.hash(env.bootstrapAdminPassword, 12),
-    role: 'super_admin',
+    role: ADMIN_ROLE.SUPER_ADMIN,
     isActive: true,
     isBootstrapAdmin: true,
+    passwordChangeRequired: false,
     createdAt: now,
     updatedAt: now,
     lastLoginAt: null,

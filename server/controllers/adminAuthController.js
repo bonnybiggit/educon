@@ -12,17 +12,32 @@ export const adminLogin = async (req, res) => {
 
   const admin = await findAdminByEmail(normalizeEmail(email));
   if (!admin || !admin.isActive) {
+    await logActivity({
+      actorEmail: normalizeEmail(email),
+      action: 'admin_login_failure',
+      resource: 'admin',
+      details: { reason: 'invalid_credentials_or_inactive' },
+    });
     throw new AppError('Invalid email or password', 401);
   }
 
   const validPassword = await bcrypt.compare(password, admin.passwordHash);
   if (!validPassword) {
+    await logActivity({
+      adminId: admin._id,
+      actorEmail: admin.email,
+      action: 'admin_login_failure',
+      resource: 'admin',
+      resourceId: admin._id,
+      details: { reason: 'invalid_credentials' },
+    });
     throw new AppError('Invalid email or password', 401);
   }
 
   await updateAdminLastLogin(admin._id);
   await logActivity({
     adminId: admin._id,
+    actorEmail: admin.email,
     action: 'admin_login',
     resource: 'admin',
     resourceId: admin._id,
@@ -41,6 +56,7 @@ export const adminLogin = async (req, res) => {
 export const adminLogout = async (req, res) => {
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'admin_logout',
     resource: 'admin',
     resourceId: req.admin.id,

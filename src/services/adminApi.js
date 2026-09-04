@@ -13,6 +13,29 @@ export const getAdminMe = () => apiRequest('/api/admin/me');
 
 export const getAdminSettings = () => apiRequest('/api/admin/settings');
 
+export const getAdmins = () => apiRequest('/api/admin/admins');
+
+export const createAdmin = (admin) => apiRequest('/api/admin/admins', {
+  method: 'POST',
+  body: JSON.stringify(admin),
+});
+
+export const updateAdminAccount = (id, updates) => apiRequest(`/api/admin/admins/${id}`, {
+  method: 'PATCH',
+  body: JSON.stringify(updates),
+});
+
+export const deleteAdminAccount = (id) => apiRequest(`/api/admin/admins/${id}`, {
+  method: 'DELETE',
+});
+
+export const resetAdminPassword = (id, password) => apiRequest(`/api/admin/admins/${id}/reset-password`, {
+  method: 'POST',
+  body: JSON.stringify(password),
+});
+
+export const getActivityLogs = () => apiRequest('/api/admin/activity-logs');
+
 export const updateAdminProfile = (profile) => apiRequest('/api/admin/profile', {
   method: 'PATCH',
   body: JSON.stringify(profile),

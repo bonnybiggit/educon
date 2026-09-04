@@ -12,6 +12,7 @@ import {
   normalizeEmail,
   sendSuccess,
 } from '../middleware/http.js';
+import { logActivity } from '../services/activityLogService.js';
 
 const isStrongPassword = (password) => (
   typeof password === 'string'
@@ -74,7 +75,14 @@ export const updateAdminPassword = async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await updateAdminById(req.admin.id, { passwordHash, passwordChangedAt: new Date() });
+  await updateAdminById(req.admin.id, { passwordHash, passwordChangedAt: new Date(), passwordChangeRequired: false });
+  await logActivity({
+    adminId: req.admin.id,
+    actorEmail: req.admin.email,
+    action: 'admin_password_changed',
+    resource: 'admin',
+    resourceId: req.admin.id,
+  });
 
   sendSuccess(res, { message: 'Password updated successfully' });
 };

@@ -7,21 +7,26 @@ import {
   MessageSquare,
   FileText,
   Settings,
-  LogOut
+  LogOut,
+  ShieldCheck,
+  ClipboardList
 } from 'lucide-react';
 import { adminLogout } from '../../services/adminApi';
+import { canManageAdmins, canManageEnquiries, canManageServices, canViewActivityLogs } from '../permissions';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Students', href: '/admin/students', icon: Users },
-  { name: 'Enquiries', href: '/admin/enquiries', icon: Mail },
-  { name: 'Services', href: '/admin/services', icon: Briefcase },
+  { name: 'Enquiries', href: '/admin/enquiries', icon: Mail, canView: canManageEnquiries },
+  { name: 'Services', href: '/admin/services', icon: Briefcase, canView: canManageServices },
   { name: 'Testimonials', href: '/admin/testimonials', icon: MessageSquare },
   { name: 'Blog', href: '/admin/blog', icon: FileText },
+  { name: 'Admin Management', href: '/admin/admins', icon: ShieldCheck, canView: canManageAdmins },
+  { name: 'Activity Logs', href: '/admin/activity-logs', icon: ClipboardList, canView: canViewActivityLogs },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
-const AdminSidebar = ({ onClose }) => {
+const AdminSidebar = ({ onClose, admin }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -53,7 +58,7 @@ const AdminSidebar = ({ onClose }) => {
 
       {/* Navigation Links */}
       <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        {navigationItems.map((item) => {
+        {navigationItems.filter((item) => !item.canView || item.canView(admin)).map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
 

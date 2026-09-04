@@ -21,8 +21,11 @@ import AdminServices from './admin/pages/AdminServices'
 import AdminTestimonials from './admin/pages/AdminTestimonials'
 import AdminBlog from './admin/pages/AdminBlog'
 import AdminSettings from './admin/pages/AdminSettings'
+import AdminManagement from './admin/pages/AdminManagement'
+import AdminActivityLogs from './admin/pages/AdminActivityLogs'
 import AdminRouteGuard from './admin/components/AdminRouteGuard'
 import AdminLayout from './admin/components/AdminLayout'
+import { ADMIN_ROLE } from './admin/permissions'
 import { PortalProvider } from './context/PortalContext'
 
 const MainSiteContent = () => {
@@ -81,9 +84,9 @@ const AdminContent = () => {
         path="/admin/dashboard"
         element={(
           <AdminRouteGuard>
-            <AdminLayout>
+            {(admin) => <AdminLayout admin={admin}>
               <AdminDashboard />
-            </AdminLayout>
+            </AdminLayout>}
           </AdminRouteGuard>
         )}
       />
@@ -91,29 +94,29 @@ const AdminContent = () => {
         path="/admin/students"
         element={(
           <AdminRouteGuard>
-            <AdminLayout>
+            {(admin) => <AdminLayout admin={admin}>
               <AdminStudents />
-            </AdminLayout>
+            </AdminLayout>}
           </AdminRouteGuard>
         )}
       />
       <Route
         path="/admin/enquiries"
         element={(
-          <AdminRouteGuard>
-            <AdminLayout>
+          <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
+            {(admin) => <AdminLayout admin={admin}>
               <AdminEnquiries />
-            </AdminLayout>
+            </AdminLayout>}
           </AdminRouteGuard>
         )}
       />
       <Route
         path="/admin/services"
         element={(
-          <AdminRouteGuard>
-            <AdminLayout>
+          <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
+            {(admin) => <AdminLayout admin={admin}>
               <AdminServices />
-            </AdminLayout>
+            </AdminLayout>}
           </AdminRouteGuard>
         )}
       />
@@ -121,9 +124,9 @@ const AdminContent = () => {
         path="/admin/testimonials"
         element={(
           <AdminRouteGuard>
-            <AdminLayout>
+            {(admin) => <AdminLayout admin={admin}>
               <AdminTestimonials />
-            </AdminLayout>
+            </AdminLayout>}
           </AdminRouteGuard>
         )}
       />
@@ -131,9 +134,29 @@ const AdminContent = () => {
         path="/admin/blog"
         element={(
           <AdminRouteGuard>
-            <AdminLayout>
+            {(admin) => <AdminLayout admin={admin}>
               <AdminBlog />
-            </AdminLayout>
+            </AdminLayout>}
+          </AdminRouteGuard>
+        )}
+      />
+      <Route
+        path="/admin/admins"
+        element={(
+          <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
+            {(admin) => <AdminLayout admin={admin}>
+              <AdminManagement />
+            </AdminLayout>}
+          </AdminRouteGuard>
+        )}
+      />
+      <Route
+        path="/admin/activity-logs"
+        element={(
+          <AdminRouteGuard roles={[ADMIN_ROLE.SUPER_ADMIN]}>
+            {(admin) => <AdminLayout admin={admin}>
+              <AdminActivityLogs />
+            </AdminLayout>}
           </AdminRouteGuard>
         )}
       />
@@ -141,9 +164,9 @@ const AdminContent = () => {
         path="/admin/settings"
         element={(
           <AdminRouteGuard>
-            <AdminLayout>
+            {(admin) => <AdminLayout admin={admin}>
               <AdminSettings />
-            </AdminLayout>
+            </AdminLayout>}
           </AdminRouteGuard>
         )}
       />

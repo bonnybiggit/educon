@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { env, isProduction } from '../config/env.js';
-import { findAdminById, sanitizeAdmin } from '../models/adminModel.js';
+import { logActivity } from '../services/activityLogService.js';
+import { ADMIN_ROLE, findAdminById, normalizeAdminRole, sanitizeAdmin } from '../models/adminModel.js';
 import { AppError, asyncHandler } from './http.js';
 
 const base64UrlEncode = (value) => Buffer
@@ -155,5 +156,34 @@ export const requireAdmin = asyncHandler(async (req, _res, next) => {
   }
 
   req.admin = sanitizeAdmin(admin);
+
+  if (req.admin.passwordChangeRequired) {
+    const allowedPasswordChangePaths = ['/api/admin/me', '/api/admin/logout', '/api/admin/settings', '/api/admin/password'];
+    if (!allowedPasswordChangePaths.includes(req.originalUrl.split('?')[0])) {
+      throw new AppError('Password change is required before continuing', 403);
+    }
+  }
+
   next();
 });
+
+export const requireRole = (...roles) => asyncHandler(async (req, _res, next) => {
+  const allowedRoles = roles.map(normalizeAdminRole);
+  const adminRole = normalizeAdminRole(req.admin?.role);
+
+  if (!allowedRoles.includes(adminRole)) {
+    await logActivity({
+      adminId: req.admin?.id,
+      actorEmail: req.admin?.email,
+      action: 'unauthorized_access_attempt',
+      resource: 'admin_route',
+      resourceId: '',
+      details: { method: req.method, path: req.originalUrl, requiredRoles: allowedRoles },
+    });
+    throw new AppError('You are not authorized to perform this action', 403);
+  }
+
+  next();
+});
+
+export const requireSuperAdmin = requireRole(ADMIN_ROLE.SUPER_ADMIN);

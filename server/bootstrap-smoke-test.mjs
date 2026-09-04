@@ -78,7 +78,7 @@ assert(store.admins.length === 2, 'bootstrap reset removed existing admins');
 assert(oldBootstrap.isBootstrapAdmin === false, 'old bootstrap marker was not cleared');
 assert(targetAdmin.isBootstrapAdmin === true, 'configured email admin was not marked as bootstrap');
 assert(targetAdmin.isActive === true, 'configured email admin was not activated');
-assert(targetAdmin.role === 'admin', 'bootstrap reset changed an existing admin role');
+assert(targetAdmin.role === 'super_admin', 'configured bootstrap admin was not promoted to super_admin');
 assert(await bcrypt.compare('TargetResetPassword123', targetAdmin.passwordHash), 'configured email admin password was not reset');
 
 await bootstrapAdminFromEnv();

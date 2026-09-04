@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
-import { getAdminMe } from '../../services/adminApi';
 
 const pageTitles = {
   '/admin/dashboard': 'Dashboard',
@@ -10,27 +8,13 @@ const pageTitles = {
   '/admin/services': 'Services',
   '/admin/testimonials': 'Testimonials',
   '/admin/blog': 'Blog',
+  '/admin/admins': 'Admin Management',
+  '/admin/activity-logs': 'Activity Logs',
   '/admin/settings': 'Settings',
 };
 
-const AdminHeader = ({ onMenuToggle }) => {
+const AdminHeader = ({ onMenuToggle, admin }) => {
   const location = useLocation();
-  const [admin, setAdmin] = useState(null);
-
-  useEffect(() => {
-    const fetchAdminProfile = async () => {
-      try {
-        const result = await getAdminMe();
-        if (result.success && result.data?.admin) {
-          setAdmin(result.data.admin);
-        }
-      } catch (error) {
-        console.error('Failed to retrieve admin details:', error);
-      }
-    };
-
-    fetchAdminProfile();
-  }, []);
 
   const currentTitle = pageTitles[location.pathname] || 'Admin Control Panel';
 
