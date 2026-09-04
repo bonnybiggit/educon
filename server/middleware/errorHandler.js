@@ -17,6 +17,11 @@ export const errorHandler = (error, _req, res, next) => {
     message = 'A record with that unique value already exists';
   }
 
+  if (error instanceof MongoServerError && error.code === 121) {
+    statusCode = 400;
+    message = 'Submitted data does not match the required format';
+  }
+
   if (error.name === 'BSONError') {
     statusCode = 400;
     message = 'Invalid resource id';

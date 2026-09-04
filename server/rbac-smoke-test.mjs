@@ -6,11 +6,14 @@ process.env.ADMIN_BOOTSTRAP_PASSWORD = 'SuperPassword123';
 process.env.ADMIN_BOOTSTRAP_NAME = 'Smoke Super';
 
 const database = await import('./config/database.js');
+const { default: express } = await import('express');
 const { default: bcrypt } = await import('bcryptjs');
 const { ObjectId } = await import('mongodb');
 const { bootstrapAdminFromEnv } = await import('./services/adminBootstrapService.js');
 const { ADMIN_ROLE, findAdminByEmail, sanitizeAdmin, migrateAdminRoles } = await import('./models/adminModel.js');
 const { createAdminToken, requireAdmin, requireRole } = await import('./middleware/adminAuth.js');
+const { default: adminRoutes } = await import('./routes/adminRoutes.js');
+const { errorHandler } = await import('./middleware/errorHandler.js');
 const { adminLogin } = await import('./controllers/adminAuthController.js');
 const { createAdmin, resetAdminPassword, deleteAdminAccount, updateAdminAccount } = await import('./controllers/adminManagementController.js');
 const { updateAdminPassword } = await import('./controllers/adminSettingsController.js');
@@ -94,6 +97,21 @@ const assertRoleAllowed = async (admin, roles, expectedAllowed, message) => {
   }
 };
 
+const startTestServer = () => new Promise((resolve) => {
+  const app = express();
+  app.use(express.json());
+  app.use('/api/admin', adminRoutes);
+  app.use(errorHandler);
+  const server = app.listen(0, () => {
+    resolve({
+      server,
+      baseUrl: `http://127.0.0.1:${server.address().port}`,
+    });
+  });
+});
+
+const parseCookie = (response) => response.headers.get('set-cookie')?.split(';')[0] || '';
+
 await database.connectDatabase();
 const store = database.getMemoryStore();
 store.admins.length = 0;
@@ -109,6 +127,47 @@ assert(superAdmin.role === ADMIN_ROLE.SUPER_ADMIN, 'bootstrap admin was not SUPE
 
 let res = await callController(adminLogin, { body: { email: 'super@example.invalid', password: 'SuperPassword123' } });
 assert(res.body.success === true, 'SUPER_ADMIN could not log in');
+
+const { server, baseUrl } = await startTestServer();
+try {
+  const loginResponse = await fetch(`${baseUrl}/api/admin/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'super@example.invalid', password: 'SuperPassword123' }),
+  });
+  const superAdminCookie = parseCookie(loginResponse);
+  assert(loginResponse.status === 200 && superAdminCookie, 'SUPER_ADMIN endpoint login did not return an auth cookie');
+
+  let endpointResponse = await fetch(`${baseUrl}/api/admin/admins`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: superAdminCookie },
+    body: JSON.stringify({ name: 'Endpoint Admin', email: 'endpoint-admin@example.invalid', temporaryPassword: 'EndpointPassword123' }),
+  });
+  let endpointBody = await endpointResponse.json();
+  assert(endpointResponse.status === 201, `SUPER_ADMIN create-admin endpoint failed: ${endpointResponse.status} ${endpointBody.message}`);
+  assert(endpointBody.data?.admin?.role === ADMIN_ROLE.ADMIN, 'create-admin endpoint did not force ADMIN role');
+  assert(!('passwordHash' in endpointBody.data.admin) && !('password' in endpointBody.data.admin), 'create-admin endpoint returned sensitive password data');
+  const endpointAdmin = await findAdminByEmail('endpoint-admin@example.invalid');
+  assert(endpointAdmin.createdBy instanceof ObjectId, 'createdBy was not stored as an ObjectId');
+  assert(await bcrypt.compare('EndpointPassword123', endpointAdmin.passwordHash), 'create-admin endpoint did not store a bcrypt password hash');
+
+  endpointResponse = await fetch(`${baseUrl}/api/admin/admins`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: superAdminCookie },
+    body: JSON.stringify({ name: 'Endpoint Admin', email: 'endpoint-admin@example.invalid', temporaryPassword: 'EndpointPassword123' }),
+  });
+  endpointBody = await endpointResponse.json();
+  assert(endpointResponse.status === 409, `duplicate admin email returned ${endpointResponse.status} instead of 409: ${endpointBody.message}`);
+
+  endpointResponse = await fetch(`${baseUrl}/api/admin/admins`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'No Auth', email: 'no-auth@example.invalid', temporaryPassword: 'NoAuthPassword123' }),
+  });
+  assert(endpointResponse.status === 401, `unauthenticated create-admin returned ${endpointResponse.status} instead of 401`);
+} finally {
+  await new Promise((resolve) => server.close(resolve));
+}
 
 res = await callController(createAdmin, {
   admin: sanitizeAdmin(superAdmin),

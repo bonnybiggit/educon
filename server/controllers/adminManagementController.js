@@ -84,7 +84,7 @@ export const createAdmin = async (req, res) => {
     isActive: true,
     isBootstrapAdmin: false,
     passwordChangeRequired: true,
-    createdBy: req.admin.id,
+    createdBy: new ObjectId(req.admin.id),
     createdAt: now,
     updatedAt: now,
     lastLoginAt: null,
