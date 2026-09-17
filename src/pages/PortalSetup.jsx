@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { usePortal } from '../context/PortalContext';
-import { User, Check } from 'lucide-react';
+import { User, Check, Eye, EyeOff } from 'lucide-react';
 import { universityData } from '../data/universityData';
 import { studyDestinationNames } from '../data/studyDestinations';
 import { registerStudent } from '../services/studentApi';
@@ -82,7 +81,6 @@ const stages = [
 
 const PortalSetup = () => {
   const navigate = useNavigate();
-  const { updateApplicationData } = usePortal();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Personal
@@ -111,6 +109,8 @@ const PortalSetup = () => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateStep = (s) => {
     const oldErrors = {};
@@ -147,15 +147,14 @@ const PortalSetup = () => {
     }
 
     setIsSubmitting(true);
-    const registrationData = {
+    const registrationData = new FormData();
+    Object.entries({
       ...formData,
       targetUniversity: formData.targetUniversity === 'OTHER' ? formData.customUniversity : formData.targetUniversity,
-      uploads: {
-        passport: uploads.passport?.name || '',
-        transcripts: uploads.transcripts?.name || '',
-        cv: uploads.cv?.name || '',
-      },
-    };
+    }).forEach(([field, value]) => registrationData.append(field, String(value)));
+    Object.entries(uploads).forEach(([field, file]) => {
+      if (file) registrationData.append(field, file);
+    });
 
     try {
       const result = await registerStudent(registrationData);
@@ -166,7 +165,6 @@ const PortalSetup = () => {
         return;
       }
 
-      updateApplicationData(registrationData);
       navigate('/login');
     } catch {
       setErrors({ submit: 'Unable to connect to registration service' });
@@ -295,13 +293,23 @@ const PortalSetup = () => {
 
                   <div>
                     <label htmlFor="password" className="block text-sm font-semibold text-gray-800 mb-2">Password</label>
-                    <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} className={`w-full px-5 py-3.5 border-2 rounded-xl ${errors.password? 'border-red-500':'border-gray-200'}`} placeholder="Create a password" />
+                    <div className="relative">
+                      <input type={showPassword ? 'text' : 'password'} id="password" name="password" value={formData.password} onChange={handleChange} className={`w-full px-5 py-3.5 pr-12 border-2 rounded-xl ${errors.password? 'border-red-500':'border-gray-200'}`} placeholder="Create a password" />
+                      <button type="button" onClick={() => setShowPassword(prev => !prev)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary-600">
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                     {errors.password && <p className="mt-2 text-sm text-red-600">{errors.password}</p>}
                   </div>
 
                   <div>
                     <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-800 mb-2">Confirm Password</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className={`w-full px-5 py-3.5 border-2 rounded-xl ${errors.confirmPassword? 'border-red-500':'border-gray-200'}`} placeholder="Repeat password" />
+                    <div className="relative">
+                      <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className={`w-full px-5 py-3.5 pr-12 border-2 rounded-xl ${errors.confirmPassword? 'border-red-500':'border-gray-200'}`} placeholder="Repeat password" />
+                      <button type="button" onClick={() => setShowConfirmPassword(prev => !prev)} aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary-600">
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                     {errors.confirmPassword && <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>}
                   </div>
 

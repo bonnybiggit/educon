@@ -36,7 +36,7 @@ const Footer = () => {
             <ul className="space-y-4">
               <li><Link to="/about" className="text-sm hover:text-primary-500 transition-colors">About Us</Link></li>
               <li><Link to="/services" className="text-sm hover:text-primary-500 transition-colors">Our Services</Link></li>
-              {/* Blog removed */}
+              <li><Link to="/blog" className="text-sm hover:text-primary-500 transition-colors">Blog</Link></li>
               <li><Link to="/faqs" className="text-sm hover:text-primary-500 transition-colors">FAQs</Link></li>
               <li><Link to="/contact" className="text-sm hover:text-primary-500 transition-colors">Contact</Link></li>
             </ul>
@@ -98,8 +98,8 @@ const Footer = () => {
             &copy; {new Date().getFullYear()} Universe Educational Consultancy Limited. All rights reserved.
           </p>
           <div className="flex gap-4">
-            <span className="hover:text-white transition-colors">Privacy Policy</span>
-            <span className="hover:text-white transition-colors">Terms of Service</span>
+            <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>

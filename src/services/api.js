@@ -13,12 +13,15 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 export const apiRequest = async (path, options = {}) => {
-  const { headers, ...requestOptions } = options;
+  const { headers, body, ...requestOptions } = options;
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+  const requestBody = isFormData || typeof body === 'string' ? body : JSON.stringify(body);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...requestOptions,
     credentials: 'include',
+    ...(body !== undefined ? { body: requestBody } : {}),
     headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...headers,
     },
   });
@@ -42,6 +45,10 @@ export const apiRequest = async (path, options = {}) => {
 export const getPublishedServices = () => apiRequest('/api/services');
 
 export const getPublishedTestimonials = () => apiRequest('/api/testimonials');
+
+export const getPublishedBlogPosts = () => apiRequest('/api/blog');
+
+export const getPublishedBlogPost = (slug) => apiRequest(`/api/blog/${encodeURIComponent(slug)}`);
 
 export const createEnquiry = (enquiry) => apiRequest('/api/enquiries', {
   method: 'POST',

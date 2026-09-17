@@ -1,5 +1,8 @@
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
+import { saveStudentFiles } from '../models/studentFileModel.js';
+import { createStudentSession, deleteStudentSession } from '../models/studentSessionModel.js';
+import { clearStudentSessionCookie, getStudentSessionToken, setStudentSessionCookie } from '../middleware/studentAuth.js';
 import { findStudentByEmail, formatStudentResponse, insertStudent } from '../models/studentModel.js';
 import { AppError, cleanString, isValidEmail, normalizeEmail, requireFields, sendSuccess } from '../middleware/http.js';
 
@@ -58,9 +61,9 @@ export const registerStudent = async (req, res) => {
     status: 'pending',
     consent: Boolean(payload.consent),
     uploads: {
-      passport: payload.uploads?.passport || '',
-      transcripts: payload.uploads?.transcripts || '',
-      cv: payload.uploads?.cv || '',
+      passport: payload.uploads?.passport || req.files?.passport?.[0]?.originalname || '',
+      transcripts: payload.uploads?.transcripts || req.files?.transcripts?.[0]?.originalname || '',
+      cv: payload.uploads?.cv || req.files?.cv?.[0]?.originalname || '',
     },
     password: await bcrypt.hash(payload.password, 10),
     createdAt: now,
@@ -69,6 +72,7 @@ export const registerStudent = async (req, res) => {
 
   try {
     await insertStudent(studentDocument);
+    await saveStudentFiles(mongoId.toString(), req.files);
     sendSuccess(res, { statusCode: 201, message: 'Registration saved' });
   } catch (error) {
     if (error.code === 11000) {
@@ -80,7 +84,7 @@ export const registerStudent = async (req, res) => {
 
 export const loginStudent = async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
+  if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
     throw new AppError('Email and password are required', 400);
   }
 
@@ -94,9 +98,14 @@ export const loginStudent = async (req, res) => {
     throw new AppError('Invalid email or password', 401);
   }
 
+  await deleteStudentSession(getStudentSessionToken(req));
+  const session = await createStudentSession(student._id.toString());
+  setStudentSessionCookie(res, session.token, session.expiresAt);
+
   sendSuccess(res, {
     message: 'Login successful',
     data: {
+      expiresAt: session.expiresAt.toISOString(),
       user: {
         ...formatStudentResponse(student),
         fullName: student.fullName,
@@ -104,4 +113,19 @@ export const loginStudent = async (req, res) => {
       },
     },
   });
+};
+
+export const getStudentMe = (req, res) => {
+  sendSuccess(res, {
+    data: {
+      user: formatStudentResponse(req.student),
+      expiresAt: req.studentSession.expiresAt.toISOString(),
+    },
+  });
+};
+
+export const logoutStudent = async (req, res) => {
+  await deleteStudentSession(getStudentSessionToken(req));
+  clearStudentSessionCookie(res);
+  sendSuccess(res, { message: 'Logged out' });
 };

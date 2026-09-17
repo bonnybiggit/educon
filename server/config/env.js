@@ -31,6 +31,7 @@ export const env = {
   mongoUri: process.env.MONGODB_URI,
   dbName: process.env.MONGODB_DB_NAME || 'educon',
   studentsCollection: process.env.MONGODB_STUDENTS_COLLECTION || process.env.MONGODB_COLLECTION || 'students',
+  studentFilesCollection: process.env.MONGODB_STUDENT_FILES_COLLECTION || 'studentFiles',
   adminsCollection: process.env.MONGODB_ADMINS_COLLECTION || 'admins',
   enquiriesCollection: process.env.MONGODB_ENQUIRIES_COLLECTION || 'enquiries',
   servicesCollection: process.env.MONGODB_SERVICES_COLLECTION || 'services',

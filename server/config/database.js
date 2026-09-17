@@ -3,6 +3,8 @@ import { env } from './env.js';
 
 const memoryStore = {
   students: [],
+  studentFiles: [],
+  studentSessions: [],
   admins: [],
   enquiries: [],
   services: [],
@@ -45,6 +47,8 @@ export const ensureIndexes = async () => {
   await Promise.all([
     db.collection(env.studentsCollection).createIndex({ email: 1 }, { unique: true }),
     db.collection(env.studentsCollection).createIndex({ createdAt: -1 }),
+    db.collection(env.studentFilesCollection).createIndex({ studentId: 1, field: 1 }, { unique: true }),
+    db.collection('studentSessions').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     db.collection(env.adminsCollection).createIndex({ email: 1 }, { unique: true }),
     db.collection(env.adminsCollection).createIndex({ role: 1, isActive: 1 }),
     db.collection(env.enquiriesCollection).createIndex({ email: 1 }),

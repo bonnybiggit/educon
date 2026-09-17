@@ -20,6 +20,14 @@ export const findStudentByEmail = async (email) => {
   return getCollection(env.studentsCollection).findOne({ email });
 };
 
+export const findStudentById = async (id) => {
+  if (!ObjectId.isValid(id)) return null;
+  if (isUsingMemoryStore()) {
+    return getMemoryStore().students.find((student) => student._id.toString() === id) || null;
+  }
+  return getCollection(env.studentsCollection).findOne({ _id: new ObjectId(id) });
+};
+
 export const insertStudent = async (studentDocument) => {
   if (isUsingMemoryStore()) {
     const students = getMemoryStore().students;

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useMemo, useEffect } from 'react';
-import { loginStudent } from '../services/studentApi';
+import { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { getStudentMe, loginStudent, logoutStudent } from '../services/studentApi';
 
 const PortalContext = createContext(null);
 
@@ -20,21 +20,30 @@ const defaultApplicationData = {
   consent: false,
 };
 
-const getStoredStudentProfile = () => {
+const completedMilestonesByStage = {
+  'Initial Consultation': 0,
+  'Document Preparation': 1,
+  'Application Submitted': 2,
+  'Document Verification': 3,
+  'CAS Letter Processing': 4,
+  'Visa Preparation': 5,
+};
+
+const clearLegacyStudentStorage = () => {
   try {
-    const rawProfile = sessionStorage.getItem('educonStudentProfile');
-    return rawProfile ? JSON.parse(rawProfile) : null;
+    sessionStorage.removeItem('educonStudentProfile');
+    sessionStorage.removeItem('educonStudentAuthenticated');
   } catch {
-    return null;
+    // Storage can be disabled; it is never used as authentication state.
   }
 };
 
 export const PortalProvider = ({ children }) => {
-  const [loggedInUser, setLoggedInUser] = useState(() => getStoredStudentProfile());
-  const [applicationData, setApplicationData] = useState(() => {
-    const storedProfile = getStoredStudentProfile();
-    return storedProfile ? { ...defaultApplicationData, ...storedProfile } : { ...defaultApplicationData };
-  });
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [expiresAt, setExpiresAt] = useState(null);
+  const requestVersion = useRef(0);
+  const applicationData = loggedInUser
+    ? { ...defaultApplicationData, ...loggedInUser } : { ...defaultApplicationData };
 
   const milestones = useMemo(() => [
     { id: 1, title: 'Initial Enrollment Deposit', description: 'Deposit received and enrollment confirmed' },
@@ -44,53 +53,84 @@ export const PortalProvider = ({ children }) => {
     { id: 5, title: 'Flight & Pre-Departure Briefing', description: 'Final preparations before travel' },
   ], []);
 
-  const mockMilestoneStatus = useMemo(() => ({
-    1: 'completed',
-    2: 'completed',
-    3: 'current',
-    4: 'pending',
-    5: 'pending',
-  }), []);
+  const completedMilestoneCount = Math.min(
+    completedMilestonesByStage[applicationData.currentStage] ?? 0,
+    milestones.length,
+  );
+  const milestoneStatuses = useMemo(() => milestones.reduce((statuses, milestone, index) => {
+    statuses[milestone.id] = index < completedMilestoneCount
+      ? 'completed'
+      : index === completedMilestoneCount
+        ? 'current'
+        : 'pending';
+    return statuses;
+  }, {}), [completedMilestoneCount, milestones]);
 
   useEffect(() => {
-    if (loggedInUser) {
-      const profile = { ...defaultApplicationData, ...loggedInUser };
-      setApplicationData(profile);
-      sessionStorage.setItem('educonStudentProfile', JSON.stringify(profile));
-      sessionStorage.setItem('educonStudentAuthenticated', 'true');
+    clearLegacyStudentStorage();
+  }, []);
+
+  const clearSession = useCallback(() => {
+    requestVersion.current += 1;
+    setLoggedInUser(null);
+    setExpiresAt(null);
+    clearLegacyStudentStorage();
+  }, []);
+
+  const acceptSession = useCallback((result) => {
+    const expiry = Date.parse(result.data?.expiresAt);
+    if (!result.success || !result.data?.user?.id || !Number.isFinite(expiry) || expiry <= Date.now()) {
+      clearSession();
+      return false;
     }
-  }, [loggedInUser]);
+    setLoggedInUser(result.data.user);
+    setExpiresAt(expiry);
+    clearLegacyStudentStorage();
+    return true;
+  }, [clearSession]);
+
+  const verifySession = useCallback(async () => {
+    const version = ++requestVersion.current;
+    try {
+      const result = await getStudentMe();
+      return version === requestVersion.current && acceptSession(result);
+    } catch {
+      if (version === requestVersion.current) clearSession();
+      return false;
+    }
+  }, [acceptSession, clearSession]);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const timer = window.setTimeout(clearSession, Math.max(0, expiresAt - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [expiresAt, clearSession]);
 
   const login = async (email, password) => {
+    const version = ++requestVersion.current;
     try {
       const result = await loginStudent({ email, password });
 
-      if (!result.success) {
-        return { success: false, error: result.error || 'Login failed' };
+      if (version !== requestVersion.current || !acceptSession(result)) {
+        return { success: false, error: result.message || 'Login failed' };
       }
-
-      const profile = { ...defaultApplicationData, ...(result.data?.user || result.user) };
-      setLoggedInUser(profile);
-      setApplicationData(profile);
-      sessionStorage.setItem('educonStudentProfile', JSON.stringify(profile));
-      sessionStorage.setItem('educonStudentAuthenticated', 'true');
       return { success: true };
     } catch {
+      if (version === requestVersion.current) clearSession();
       return { success: false, error: 'Login service unavailable' };
     }
   };
 
-  const updateApplicationData = (data) => {
-    const merged = { ...defaultApplicationData, ...applicationData, ...data };
-    setApplicationData(merged);
-    sessionStorage.setItem('educonStudentProfile', JSON.stringify(merged));
-  };
-
-  const logout = () => {
-    setLoggedInUser(null);
-    setApplicationData({ ...defaultApplicationData });
-    sessionStorage.removeItem('educonStudentAuthenticated');
-    sessionStorage.removeItem('educonStudentProfile');
+  const logout = async () => {
+    requestVersion.current += 1;
+    try {
+      const result = await logoutStudent();
+      if (!result.success) return false;
+      clearSession();
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   return (
@@ -98,10 +138,11 @@ export const PortalProvider = ({ children }) => {
       loggedInUser,
       applicationData,
       milestones,
-      mockMilestoneStatus,
+      completedMilestoneCount,
+      milestoneStatuses,
       login,
       logout,
-      updateApplicationData,
+      verifySession,
     }}>
       {children}
     </PortalContext.Provider>

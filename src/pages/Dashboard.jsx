@@ -1,7 +1,6 @@
 import { usePortal } from '../context/PortalContext';
 import { LogOut, User, GraduationCap, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 import Seo from '../components/Seo';
 
 const MilestoneStep = ({ milestone, status }) => {
@@ -70,22 +69,12 @@ const MilestoneStep = ({ milestone, status }) => {
 };
 
 const Dashboard = () => {
-  const { applicationData, milestones, mockMilestoneStatus, logout, loggedInUser } = usePortal();
+  const { applicationData, milestones, completedMilestoneCount, milestoneStatuses, logout, loggedInUser } = usePortal();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const isStudentAuthenticated = sessionStorage.getItem('educonStudentAuthenticated') === 'true';
-    const hasProfile = Boolean(applicationData.fullName || loggedInUser?.fullName || loggedInUser?.name);
-
-    if (!isStudentAuthenticated && !hasProfile) {
-      navigate('/login');
-    }
-  }, [applicationData.fullName, loggedInUser, navigate]);
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const name = applicationData.fullName || loggedInUser?.fullName || loggedInUser?.name || 'Student';
-    logout();
-    navigate('/logout', { state: { name } });
+    if (await logout()) navigate('/logout', { state: { name } });
   };
 
   const profileName = applicationData.fullName || loggedInUser?.fullName || loggedInUser?.name || 'Student';
@@ -180,7 +169,7 @@ const Dashboard = () => {
               You're on track with your UK university application. The next step is CAS Letter processing.
             </p>
             <div className="text-3xl font-display font-bold text-accent-400">
-              3/5
+              {completedMilestoneCount}/{milestones.length}
             </div>
             <p className="text-xs text-primary-300">Milestones completed</p>
           </div>
@@ -195,7 +184,7 @@ const Dashboard = () => {
               <MilestoneStep
                 key={milestone.id}
                 milestone={milestone}
-                status={mockMilestoneStatus[milestone.id]}
+                status={milestoneStatuses[milestone.id]}
               />
             ))}
           </div>

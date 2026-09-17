@@ -12,7 +12,13 @@ import ExploreUniversities from './pages/ExploreUniversities'
 import Login from './pages/Login'
 import PortalSetup from './pages/PortalSetup'
 import Dashboard from './pages/Dashboard'
+import StudentRouteGuard from './components/StudentRouteGuard'
 import Logout from './pages/Logout'
+import Blog from './pages/Blog'
+import BlogPost from './pages/BlogPost'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import Terms from './pages/Terms'
+import NotFound from './pages/NotFound'
 import AdminLogin from './admin/pages/AdminLogin'
 import AdminDashboard from './admin/pages/AdminDashboard'
 import AdminStudents from './admin/pages/AdminStudents'
@@ -54,10 +60,15 @@ const MainSiteContent = () => {
           <Route path="/explore-universities" element={<ExploreUniversities />} />
           <Route path="/faqs" element={<FAQs />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route path="/login" element={<Login />} />
           <Route path="/portal/setup" element={<PortalSetup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<StudentRouteGuard><Dashboard /></StudentRouteGuard>} />
           <Route path="/logout" element={<Logout />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
