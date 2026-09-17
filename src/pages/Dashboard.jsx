@@ -1,6 +1,7 @@
 import { usePortal } from '../context/PortalContext';
 import { LogOut, User, GraduationCap, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Seo from '../components/Seo';
 
 const MilestoneStep = ({ milestone, status }) => {
@@ -173,6 +174,23 @@ const Dashboard = () => {
             </div>
             <p className="text-xs text-primary-300">Milestones completed</p>
           </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary-600">Profile progress</p>
+            <h2 className="text-xl font-bold text-gray-900 mt-1">
+              {loggedInUser?.profileCompleted ? 'Your profile is complete' : 'Complete Your Profile'}
+            </h2>
+            <p className="text-gray-600 text-sm mt-2">
+              {loggedInUser?.profileCompleted
+                ? 'Review your application information and keep it up to date.'
+                : 'Add your application details and documents to continue your journey.'}
+            </p>
+          </div>
+          <Link to="/profile" className="inline-flex items-center justify-center px-5 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors whitespace-nowrap">
+            {loggedInUser?.profileCompleted ? 'Review Profile' : 'Complete Your Profile'}
+          </Link>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6">

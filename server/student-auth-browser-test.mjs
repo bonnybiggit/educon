@@ -112,6 +112,11 @@ export async function runBrowserChecks({ app, baseUrl, store, credentials }) {
     assert.equal(await evaluate('window.dashboardWasRendered'), false, 'forged storage unlocked dashboard');
     assert.equal(await evaluate('sessionStorage.length'), 0, 'legacy credentials were not removed');
 
+    await evaluate('document.querySelector("[data-auth-provider=google]").click()');
+    await until('location.pathname === "/api/student/auth/google"');
+    await navigate('/login');
+    await until('Boolean(document.querySelector("[data-auth-provider=google]"))');
+
     await browserLogin();
     assert.equal(await evaluate('sessionStorage.length'), 0);
     assert.equal(await evaluate('document.cookie.includes("educon_student_session")'), false);
@@ -142,6 +147,7 @@ export async function runBrowserChecks({ app, baseUrl, store, credentials }) {
     await evaluate('document.querySelector("input[name=consent]").click()');
     await clickText('Complete Registration');
     await until('location.pathname === "/login"');
+    assert.ok(await evaluate('performance.getEntriesByType("resource").some((entry) => entry.name.includes("/api/register"))'), 'normal registration did not use /api/register');
     assert.equal(await evaluate('sessionStorage.length'), 0, 'registration persisted credentials');
     await navigate('/dashboard');
     await until('location.pathname === "/login"');
@@ -157,6 +163,52 @@ export async function runBrowserChecks({ app, baseUrl, store, credentials }) {
     await navigate('/dashboard');
     await until('location.pathname === "/login"');
     assert.equal(await evaluate('window.dashboardWasRendered'), false, 'API failure unlocked dashboard');
+
+    await send('Network.setBlockedURLs', { urls: ['https://*'] });
+    await navigate('/portal/setup?oauth=pending');
+    await until('Boolean(document.querySelector("#fullName"))');
+    assert.equal(await evaluate('document.querySelector("#password") === null && document.querySelector("#confirmPassword") === null'), true, 'Google pending setup must not render password fields');
+    await evaluate(`(() => {
+      const originalFetch = window.fetch;
+      window.fetch = async (input, init = {}) => {
+        const url = String(input);
+        if (url.includes('/api/student/auth/google/complete')) {
+          window.googleCompletionRequest = {
+            url,
+            method: init.method,
+            fields: init.body instanceof FormData ? [...init.body.keys()] : [],
+          };
+          return new Response(JSON.stringify({ success: true, data: {
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+            user: { id: 'google-browser-student', fullName: 'Google Browser Student' },
+          } }), { status: 201, headers: { 'Content-Type': 'application/json' } });
+        }
+        if (url.includes('/api/student/me')) {
+          return new Response(JSON.stringify({ success: true, data: {
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+            user: { id: 'google-browser-student', fullName: 'Google Browser Student' },
+          } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+        return originalFetch(input, init);
+      };
+    })()`);
+    await fill('#fullName', 'Google Browser Student');
+    await fill('#email', 'google-browser@example.invalid');
+    await fill('#mobileNumber', '12345678');
+    await clickText('Next');
+    await until('Boolean(document.querySelector("#targetUniversity"))');
+    const pendingUniversity = await evaluate('document.querySelector("#targetUniversity").options[1].value');
+    await fill('#targetUniversity', pendingUniversity);
+    await fill('#courseOfStudy', 'Computer Science');
+    await fill('#intakeSession', 'Sept 2026');
+    await clickText('Next');
+    await until('Boolean(document.querySelector("input[name=consent]"))');
+    await evaluate('document.querySelector("input[name=consent]").click()');
+    await clickText('Complete Registration');
+    await until('location.pathname === "/dashboard" && document.body.textContent.includes("Student Dashboard")');
+    assert.equal(await evaluate('window.googleCompletionRequest.url.includes("/api/student/auth/google/complete")'), true, 'Google pending setup used the wrong endpoint');
+    assert.equal(await evaluate('window.googleCompletionRequest.method'), 'POST');
+    assert.equal(await evaluate('window.googleCompletionRequest.fields.includes("password") || window.googleCompletionRequest.fields.includes("confirmPassword")'), false, 'Google completion submitted password fields');
     console.log('Student authentication browser checks passed (registration, forged storage, login, reload, logout, expiry, API failure)');
   } finally {
     for (const entry of pending.values()) clearTimeout(entry.timer);

@@ -28,6 +28,30 @@ export const findStudentById = async (id) => {
   return getCollection(env.studentsCollection).findOne({ _id: new ObjectId(id) });
 };
 
+export const markStudentEmailVerified = async (id) => {
+  if (isUsingMemoryStore()) {
+    const student = getMemoryStore().students.find((item) => item._id.toString() === id);
+    if (!student) return null;
+    Object.assign(student, { emailVerified: true, emailVerifiedAt: new Date(), updatedAt: new Date() });
+    return student;
+  }
+  return getCollection(env.studentsCollection).findOneAndUpdate(
+    { _id: new ObjectId(id) },
+    { $set: { emailVerified: true, emailVerifiedAt: new Date(), updatedAt: new Date() } },
+    { returnDocument: 'after' },
+  );
+};
+
+export const deleteStudentById = async (id) => {
+  if (isUsingMemoryStore()) {
+    const students = getMemoryStore().students;
+    const index = students.findIndex((item) => item._id.toString() === id);
+    if (index !== -1) students.splice(index, 1);
+    return;
+  }
+  await getCollection(env.studentsCollection).deleteOne({ _id: new ObjectId(id) });
+};
+
 export const insertStudent = async (studentDocument) => {
   if (isUsingMemoryStore()) {
     const students = getMemoryStore().students;
@@ -162,3 +186,5 @@ export const updateStudentById = async (id, patch) => {
     { returnDocument: 'after' }
   );
 };
+
+export const updateStudentProfileById = async (id, patch) => updateStudentById(id, patch);

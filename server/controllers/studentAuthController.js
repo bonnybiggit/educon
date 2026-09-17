@@ -1,9 +1,9 @@
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
-import { saveStudentFiles } from '../models/studentFileModel.js';
 import { createStudentSession, deleteStudentSession } from '../models/studentSessionModel.js';
 import { clearStudentSessionCookie, getStudentSessionToken, setStudentSessionCookie } from '../middleware/studentAuth.js';
-import { findStudentByEmail, formatStudentResponse, insertStudent } from '../models/studentModel.js';
+import { deleteStudentById, findStudentByEmail, formatStudentResponse, insertStudent } from '../models/studentModel.js';
+import { issueStudentVerificationCode } from './studentEmailVerificationController.js';
 import { AppError, cleanString, isValidEmail, normalizeEmail, requireFields, sendSuccess } from '../middleware/http.js';
 
 const requiredRegistrationFields = [
@@ -18,21 +18,46 @@ const requiredRegistrationFields = [
   'intakeSession',
   'consent',
 ];
+const requiredStudentProfileFields = requiredRegistrationFields.filter((field) => field !== 'password');
+const requiredAccountFields = ['fullName', 'email', 'password', 'country', 'mobileNumber', 'consent'];
 
-export const registerStudent = async (req, res) => {
-  const payload = req.body;
-  requireFields(payload, requiredRegistrationFields);
+export const validateStudentAccount = (payload) => {
+  requireFields(payload, requiredAccountFields);
+  if (!isValidEmail(payload.email)) throw new AppError('Invalid email address', 400);
+  if (typeof payload.password !== 'string' || payload.password.length < 6) {
+    throw new AppError('Password must be at least 6 characters', 400);
+  }
+  if (payload.consent !== true && payload.consent !== 'true') {
+    throw new AppError('Consent is required', 400);
+  }
+};
+
+export const validateStudentProfile = (payload) => {
+  requireFields(payload, requiredStudentProfileFields);
 
   if (!isValidEmail(payload.email)) {
     throw new AppError('Invalid email address', 400);
   }
 
-  if (typeof payload.password !== 'string' || payload.password.length < 6) {
-    throw new AppError('Password must be at least 6 characters', 400);
-  }
-
-  if (!payload.consent) {
+  const consentGiven = payload.consent === true || payload.consent === 'true';
+  if (!consentGiven) {
     throw new AppError('Consent is required', 400);
+  }
+};
+
+export const registerStudent = async (req, res) => {
+  const payload = req.body;
+  validateStudentAccount(payload);
+  const email = normalizeEmail(payload.email);
+  const existingStudent = await findStudentByEmail(email);
+  const genericResponse = () => sendSuccess(res, {
+    statusCode: 202,
+    message: 'If the account can be registered, a verification code has been sent.',
+    data: { verificationRequired: true },
+  });
+  if (existingStudent) {
+    genericResponse();
+    return;
   }
 
   const now = new Date();
@@ -43,28 +68,15 @@ export const registerStudent = async (req, res) => {
     id: mongoId.toString(),
     fullName: cleanString(payload.fullName),
     dateOfBirth: cleanString(payload.dateOfBirth),
-    email: normalizeEmail(payload.email),
+    email,
     mobileNumber: cleanString(payload.mobileNumber),
     countryCode: cleanString(payload.countryCode),
     country: cleanString(payload.country),
-    passportNumber: cleanString(payload.passportNumber),
-    profilePicture: payload.profilePicture || '',
-    targetCountry: cleanString(payload.targetCountry),
-    targetUniversity: cleanString(payload.targetUniversity),
-    customUniversity: cleanString(payload.customUniversity),
-    highestQualification: cleanString(payload.highestQualification),
-    previousInstitution: cleanString(payload.previousInstitution),
-    cgpa: cleanString(payload.cgpa),
-    courseOfStudy: cleanString(payload.courseOfStudy),
-    intakeSession: cleanString(payload.intakeSession),
-    currentStage: cleanString(payload.currentStage) || 'Initial Consultation',
+    emailVerified: false,
+    emailVerifiedAt: null,
+    profileCompleted: false,
     status: 'pending',
-    consent: Boolean(payload.consent),
-    uploads: {
-      passport: payload.uploads?.passport || req.files?.passport?.[0]?.originalname || '',
-      transcripts: payload.uploads?.transcripts || req.files?.transcripts?.[0]?.originalname || '',
-      cv: payload.uploads?.cv || req.files?.cv?.[0]?.originalname || '',
-    },
+    consent: true,
     password: await bcrypt.hash(payload.password, 10),
     createdAt: now,
     updatedAt: now,
@@ -72,11 +84,17 @@ export const registerStudent = async (req, res) => {
 
   try {
     await insertStudent(studentDocument);
-    await saveStudentFiles(mongoId.toString(), req.files);
-    sendSuccess(res, { statusCode: 201, message: 'Registration saved' });
+    try {
+      await issueStudentVerificationCode(studentDocument);
+    } catch (error) {
+      await deleteStudentById(mongoId.toString());
+      throw error;
+    }
+    genericResponse();
   } catch (error) {
     if (error.code === 11000) {
-      throw new AppError('Email already registered', 409);
+      genericResponse();
+      return;
     }
     throw error;
   }
@@ -91,6 +109,10 @@ export const loginStudent = async (req, res) => {
   const student = await findStudentByEmail(normalizeEmail(email));
   if (!student) {
     throw new AppError('Invalid email or password', 401);
+  }
+
+  if (student.emailVerified === false) {
+    throw new AppError('Email verification required', 403);
   }
 
   const validPassword = await bcrypt.compare(password, student.password);

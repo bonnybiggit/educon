@@ -12,6 +12,7 @@ import ExploreUniversities from './pages/ExploreUniversities'
 import Login from './pages/Login'
 import PortalSetup from './pages/PortalSetup'
 import Dashboard from './pages/Dashboard'
+import StudentProfile from './pages/StudentProfile'
 import StudentRouteGuard from './components/StudentRouteGuard'
 import Logout from './pages/Logout'
 import Blog from './pages/Blog'
@@ -67,6 +68,7 @@ const MainSiteContent = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/portal/setup" element={<PortalSetup />} />
           <Route path="/dashboard" element={<StudentRouteGuard><Dashboard /></StudentRouteGuard>} />
+          <Route path="/profile" element={<StudentRouteGuard><StudentProfile /></StudentRouteGuard>} />
           <Route path="/logout" element={<Logout />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

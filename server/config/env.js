@@ -38,6 +38,10 @@ export const env = {
   testimonialsCollection: process.env.MONGODB_TESTIMONIALS_COLLECTION || 'testimonials',
   blogCollection: process.env.MONGODB_BLOG_COLLECTION || 'blogPosts',
   activityLogsCollection: process.env.MONGODB_ACTIVITY_LOGS_COLLECTION || 'activityLogs',
+  studentIdentitiesCollection: process.env.MONGODB_STUDENT_IDENTITIES_COLLECTION || 'studentIdentities',
+  studentOAuthStatesCollection: process.env.MONGODB_STUDENT_OAUTH_STATES_COLLECTION || 'studentOAuthStates',
+  studentOAuthPendingCollection: process.env.MONGODB_STUDENT_OAUTH_PENDING_COLLECTION || 'studentOAuthPending',
+  studentEmailVerificationsCollection: process.env.MONGODB_STUDENT_EMAIL_VERIFICATIONS_COLLECTION || 'studentEmailVerifications',
   corsOrigins: getCorsOrigins(),
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresInSeconds: Number(process.env.JWT_EXPIRES_IN_SECONDS || 60 * 60 * 8),
@@ -45,6 +49,13 @@ export const env = {
   bootstrapAdminName: process.env.ADMIN_BOOTSTRAP_NAME,
   bootstrapAdminEmail: process.env.ADMIN_BOOTSTRAP_EMAIL,
   bootstrapAdminPassword: process.env.ADMIN_BOOTSTRAP_PASSWORD,
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI,
+  frontendUrl: process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173',
+  resendApiKey: process.env.RESEND_API_KEY,
+  emailFrom: process.env.EMAIL_FROM || 'Universe Consult <onboarding@resend.dev>',
+  emailVerificationCodePepper: process.env.EMAIL_VERIFICATION_CODE_PEPPER || '',
 };
 
 export const isProduction = env.nodeEnv === 'production';
@@ -59,6 +70,9 @@ export const validateProductionEnv = () => {
     ['ADMIN_BOOTSTRAP_EMAIL', env.bootstrapAdminEmail],
     ['ADMIN_BOOTSTRAP_PASSWORD', env.bootstrapAdminPassword],
     ['CORS_ORIGINS or RENDER_EXTERNAL_URL', process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || process.env.RENDER_EXTERNAL_URL],
+    ['RESEND_API_KEY', env.resendApiKey],
+    ['EMAIL_FROM', process.env.EMAIL_FROM],
+    ['EMAIL_VERIFICATION_CODE_PEPPER', env.emailVerificationCodePepper],
   ];
   const missingVariables = requiredVariables
     .filter(([, value]) => !String(value || '').trim())

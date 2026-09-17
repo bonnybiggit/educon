@@ -16,6 +16,9 @@ const publicPaths = [
   '/explore-universities',
   '/faqs',
   '/contact',
+  '/blog',
+  '/privacy-policy',
+  '/terms',
 ];
 
 const today = new Date().toISOString().slice(0, 10);

@@ -11,9 +11,12 @@ const database = await import('./config/database.js');
 const { default: studentRoutes } = await import('./routes/studentRoutes.js');
 const { errorHandler } = await import('./middleware/errorHandler.js');
 const { corsOptions } = await import('./middleware/corsOptions.js');
+const { setVerificationEmailSenderForTests } = await import('./services/emailService.js');
 await database.connectDatabase();
 assert.equal(database.isUsingMemoryStore(), true);
 const store = database.getMemoryStore();
+let verificationCode;
+setVerificationEmailSenderForTests(async ({ code }) => { verificationCode = code; });
 const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -24,28 +27,14 @@ await new Promise((resolve) => server.once('listening', resolve));
 const baseUrl = `http://127.0.0.1:${server.address().port}`;
 const credentials = { email: 'student@example.invalid', password: 'StudentPassword123' };
 const registration = {
-  ...credentials, fullName: 'Test Student', mobileNumber: '12345678', country: 'Nigeria',
-  targetCountry: 'United Kingdom', targetUniversity: 'Test University',
-  courseOfStudy: 'Computing', intakeSession: 'Sept 2026', consent: true,
+  ...credentials, fullName: 'Test Student', mobileNumber: '12345678', country: 'Nigeria', consent: true,
+  targetUniversity: 'Should Not Be Stored', courseOfStudy: 'Should Not Be Stored',
 };
 const request = (path, { body, cookie, ...options } = {}) => fetch(`${baseUrl}/api${path}`, {
   ...options,
   headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}), ...options.headers },
   ...(body ? { method: 'POST', body: JSON.stringify(body) } : {}),
 });
-const multipartRequest = (path, body) => fetch(`${baseUrl}/api${path}`, {
-  method: 'POST',
-  body,
-});
-const createMultipartRegistration = (email, files) => {
-  const form = new FormData();
-  Object.entries({
-    ...registration,
-    email,
-  }).forEach(([field, value]) => form.append(field, String(value)));
-  Object.entries(files).forEach(([field, file]) => form.append(field, file.blob, file.filename));
-  return form;
-};
 const login = async () => {
   const response = await request('/login', { body: credentials });
   assert.equal(response.status, 200);
@@ -62,32 +51,38 @@ const login = async () => {
 
 try {
   assert.equal((await request('/student/me')).status, 401);
-  assert.equal((await request('/register', { body: registration })).status, 201);
+  for (const field of ['fullName', 'email', 'password', 'country', 'mobileNumber', 'consent']) {
+    const incomplete = { ...registration, email: `missing-${field}@example.invalid` };
+    delete incomplete[field];
+    assert.equal((await request('/register', { body: incomplete })).status, 400, `${field} must be required`);
+  }
+  assert.equal((await request('/register', { body: registration })).status, 202);
   assert.equal(store.studentSessions.length, 0, 'registration must not authenticate');
   assert.equal((await request('/student/me')).status, 401);
-  assert.notEqual(store.students[0].password, credentials.password);
-  const uploadedRegistration = createMultipartRegistration('uploaded@example.invalid', {
-    passport: { blob: new Blob(['passport-bytes'], { type: 'application/pdf' }), filename: 'passport.pdf' },
-    transcripts: { blob: new Blob(['transcript-bytes'], { type: 'image/png' }), filename: 'transcript.png' },
-    cv: { blob: new Blob(['cv-bytes'], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }), filename: 'cv.docx' },
-  });
-  assert.equal((await multipartRequest('/register', uploadedRegistration)).status, 201);
-  const uploadedStudent = store.students.find((student) => student.email === 'uploaded@example.invalid');
-  assert.deepEqual(uploadedStudent.uploads, {
-    passport: 'passport.pdf',
-    transcripts: 'transcript.png',
-    cv: 'cv.docx',
-  });
-  assert.equal(store.studentFiles.length, 3);
-  assert.deepEqual(store.studentFiles.map((file) => file.data.toString()).sort(), ['cv-bytes', 'passport-bytes', 'transcript-bytes']);
-  const invalidType = createMultipartRegistration('invalid-file@example.invalid', {
-    passport: { blob: new Blob(['not-an-image'], { type: 'text/plain' }), filename: 'passport.txt' },
-  });
-  assert.equal((await multipartRequest('/register', invalidType)).status, 400);
-  const oversized = createMultipartRegistration('large-file@example.invalid', {
-    passport: { blob: new Blob([new Uint8Array(5 * 1024 * 1024 + 1)], { type: 'application/pdf' }), filename: 'large.pdf' },
-  });
-  assert.equal((await multipartRequest('/register', oversized)).status, 400);
+  const registeredStudent = store.students.find((student) => student.email === credentials.email);
+  assert.ok(registeredStudent);
+  assert.notEqual(registeredStudent.password, credentials.password);
+  assert.equal(registeredStudent.emailVerified, false);
+  assert.equal(registeredStudent.emailVerifiedAt, null);
+  assert.equal(registeredStudent.profileCompleted, false);
+  assert.equal(registeredStudent.targetUniversity, undefined, 'academic fields must not be stored at account creation');
+  assert.equal(registeredStudent.courseOfStudy, undefined, 'application fields must not be stored at account creation');
+  assert.equal(store.studentEmailVerifications.length, 1);
+  assert.match(verificationCode, /^\d{6}$/);
+  assert.notEqual(store.studentEmailVerifications[0].codeHash, verificationCode);
+  assert.equal((await request('/login', { body: credentials })).status, 403, 'unverified accounts cannot log in');
+  assert.equal((await request('/register', { body: registration })).status, 202, 'duplicate registration must be generic');
+  assert.equal(store.students.filter((student) => student.email === credentials.email).length, 1);
+  setVerificationEmailSenderForTests(async () => { throw new Error('simulated provider failure'); });
+  const failedRegistration = { ...registration, email: 'delivery-failure@example.invalid' };
+  const challengeCountBeforeFailure = store.studentEmailVerifications.length;
+  assert.equal((await request('/register', { body: failedRegistration })).status, 503, 'provider failure must fail registration safely');
+  assert.equal(store.students.some((student) => student.email === failedRegistration.email), false);
+  assert.equal(store.studentEmailVerifications.length, challengeCountBeforeFailure);
+  setVerificationEmailSenderForTests(async ({ code }) => { verificationCode = code; });
+  let verificationResponse = await request('/student/verify-email', { body: { email: credentials.email, code: verificationCode } });
+  assert.equal((await verificationResponse.json()).data.verified, true);
+  assert.equal(registeredStudent.emailVerified, true);
   assert.equal((await request('/login', { body: { ...credentials, password: 'wrong' } })).status, 401);
   assert.equal((await request('/login', { body: { ...credentials, password: {} } })).status, 400);
   let cookie = await login();

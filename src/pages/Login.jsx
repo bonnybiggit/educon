@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { usePortal } from '../context/PortalContext';
 import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import Seo from '../components/Seo';
+import { getGoogleStudentAuthUrl } from '../services/studentApi';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -11,6 +12,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = usePortal();
+
+  const handleGoogleAuth = () => {
+    window.location.assign(getGoogleStudentAuthUrl());
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -154,10 +159,32 @@ const Login = () => {
             </button>
           </form>
 
+          <div className="mt-6">
+            <div className="flex items-center gap-3 text-xs font-semibold tracking-wider text-gray-400">
+              <span className="h-px flex-1 bg-gray-200" />
+              <span>OR</span>
+              <span className="h-px flex-1 bg-gray-200" />
+            </div>
+            <div className="flex justify-center mt-4">
+              <button
+                type="button"
+                data-auth-provider="google"
+                data-auth-endpoint="/api/student/auth/google"
+                onClick={handleGoogleAuth}
+                className="inline-flex w-auto max-w-full items-center justify-center gap-3 rounded-lg bg-primary-600 px-5 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 shrink-0">
+                  <path fill="#4285F4" d="M21.6 12.23c0-.72-.06-1.42-.18-2.09H12v3.96h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.23c1.89-1.74 2.98-4.31 2.98-7.4Z" />
+                  <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.43l-3.23-2.51c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.05v2.59A10 10 0 0 0 12 22Z" />
+                  <path fill="#FBBC05" d="M6.39 13.89A6 6 0 0 1 6.07 12c0-.66.11-1.3.32-1.89V7.52H3.05A10 10 0 0 0 2 12c0 1.61.38 3.13 1.05 4.48l3.34-2.59Z" />
+                  <path fill="#EA4335" d="M12 5.98c1.47 0 2.79.5 3.83 1.49l2.87-2.87C16.96 2.93 14.7 2 12 2a10 10 0 0 0-8.95 5.52l3.34 2.59C7.18 7.74 9.39 5.98 12 5.98Z" />
+                </svg>
+                <span className="whitespace-nowrap">Continue with Google</span>
+              </button>
+            </div>
+          </div>
+
           <div className="mt-8 pt-6 border-t border-gray-200 space-y-3">
-            <p className="text-center text-xs text-gray-500">
-              Demo credentials: student@test.com / password123
-            </p>
             <Link to="/portal/setup" className="block text-center text-sm text-primary-600 hover:text-primary-700 font-medium">
               Need to register? Complete your profile
             </Link>
