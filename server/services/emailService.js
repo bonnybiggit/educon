@@ -41,7 +41,14 @@ export const sendVerificationEmail = async ({ email, code, recipientName }) => {
     html: message.html,
     text: message.text,
   });
-  if (error) throw new AppError('Email delivery failed', 503);
+  if (error) {
+    console.error('Resend email delivery failed:', {
+      name: error.name,
+      message: error.message,
+      statusCode: error.statusCode ?? error.status ?? error.code,
+    });
+    throw new AppError('Email delivery failed', 503);
+  }
 };
 
 export const setVerificationEmailSenderForTests = (sender) => {
