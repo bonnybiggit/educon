@@ -5,6 +5,7 @@ import Seo from '../components/Seo';
 import { universityData } from '../data/universityData';
 import { studyDestinationNames } from '../data/studyDestinations';
 import { getStudentProfile, updateStudentProfile } from '../services/studentApi';
+import { usePortal } from '../context/PortalContext';
 
 const stages = [
   'Initial Consultation',
@@ -33,6 +34,7 @@ const emptyForm = {
 const fieldClass = 'w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20';
 
 const StudentProfile = () => {
+  const { verifySession } = usePortal();
   const [formData, setFormData] = useState(emptyForm);
   const [completion, setCompletion] = useState(null);
   const [student, setStudent] = useState(null);
@@ -101,6 +103,7 @@ const StudentProfile = () => {
       setStudent(result.data?.profile || student);
       setCompletion(result.data?.completion || completion);
       setFiles({ passport: null, transcripts: null, cv: null });
+      await verifySession();
       setMessage(result.data?.completion?.isComplete ? 'Profile completed successfully.' : 'Progress saved. You can continue later.');
     } catch {
       setMessage('Unable to save your profile right now.');

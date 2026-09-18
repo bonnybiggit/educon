@@ -516,6 +516,8 @@ const PortalSetup = () => {
                   </div>
                 )}
 
+                {errors.submit && <p className="mt-4 text-sm text-red-600 text-center">{errors.submit}</p>}
+
                 <div className="flex justify-between items-center gap-3 mt-6">
                   <Link to="/login" className="text-sm text-primary-600 hover:underline">Already registered? Log in</Link>
                   {isGooglePending ? (
