@@ -3,6 +3,7 @@ import { LogOut, User, GraduationCap, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import Seo from '../components/Seo';
+import { getApplicationStageLabel } from '../data/applicationStages';
 
 const MilestoneStep = ({ milestone, status }) => {
   const getStatusStyles = () => {
@@ -151,7 +152,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <span className="text-xs text-gray-500 uppercase tracking-wider">Current Stage</span>
-                <p className="font-semibold text-gray-900">{applicationData.currentStage}</p>
+                <p className="font-semibold text-gray-900">{getApplicationStageLabel(applicationData.currentStage)}</p>
               </div>
             </div>
           </div>
@@ -167,7 +168,7 @@ const Dashboard = () => {
               </div>
             </div>
             <p className="text-primary-100 text-sm mb-4">
-              You're on track with your UK university application. The next step is CAS Letter processing.
+              Track every step of your application below, from document review through to your visa.
             </p>
             <div className="text-3xl font-display font-bold text-accent-400">
               {completedMilestoneCount}/{milestones.length}

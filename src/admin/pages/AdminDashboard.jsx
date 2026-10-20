@@ -11,6 +11,7 @@ import {
   RefreshCcw
 } from 'lucide-react';
 import { getAdminDashboard, getAdminMe } from '../../services/adminApi';
+import { getApplicationStageLabel } from '../../data/applicationStages';
 
 const AdminDashboard = () => {
   const [data, setData] = useState(null);
@@ -200,7 +201,7 @@ const AdminDashboard = () => {
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-950 truncate">{student.fullName}</p>
                       <p className="text-xs text-slate-500 mt-0.5 truncate">{student.email}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">{student.currentStage || 'Initial Consultation'}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">{getApplicationStageLabel(student.currentStage)}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <span

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { getStudentMe, loginStudent, logoutStudent } from '../services/studentApi';
+import { APPLICATION_STAGES, getApplicationStageIndex } from '../data/applicationStages';
 
 const PortalContext = createContext(null);
 
@@ -20,15 +21,6 @@ const defaultApplicationData = {
   consent: false,
 };
 
-const completedMilestonesByStage = {
-  'Initial Consultation': 0,
-  'Document Preparation': 1,
-  'Application Submitted': 2,
-  'Document Verification': 3,
-  'CAS Letter Processing': 4,
-  'Visa Preparation': 5,
-};
-
 const clearLegacyStudentStorage = () => {
   try {
     sessionStorage.removeItem('educonStudentProfile');
@@ -45,26 +37,30 @@ export const PortalProvider = ({ children }) => {
   const applicationData = loggedInUser
     ? { ...defaultApplicationData, ...loggedInUser } : { ...defaultApplicationData };
 
-  const milestones = useMemo(() => [
-    { id: 1, title: 'Initial Enrollment Deposit', description: 'Deposit received and enrollment confirmed' },
-    { id: 2, title: 'Document Verification', description: 'Academic documents under review' },
-    { id: 3, title: 'CAS Letter Issuance', description: 'Confirmation of Acceptance for Studies' },
-    { id: 4, title: 'Visa Application Submission', description: 'Visa application in process' },
-    { id: 5, title: 'Flight & Pre-Departure Briefing', description: 'Final preparations before travel' },
-  ], []);
+  const milestones = useMemo(() => APPLICATION_STAGES.map((stage, index) => ({
+    id: index + 1,
+    title: stage.label,
+    description: stage.description,
+  })), []);
 
-  const completedMilestoneCount = Math.min(
-    completedMilestonesByStage[applicationData.currentStage] ?? 0,
-    milestones.length,
-  );
+  // Unknown/legacy currentStage values (from before this stage system) safely fall back to "not started".
+  const stageIndex = getApplicationStageIndex(applicationData.currentStage);
+  const hasKnownStage = stageIndex >= 0;
+  const completedMilestoneCount = !hasKnownStage
+    ? 0
+    : stageIndex === milestones.length - 1
+      ? milestones.length
+      : stageIndex;
   const milestoneStatuses = useMemo(() => milestones.reduce((statuses, milestone, index) => {
-    statuses[milestone.id] = index < completedMilestoneCount
-      ? 'completed'
-      : index === completedMilestoneCount
-        ? 'current'
-        : 'pending';
+    statuses[milestone.id] = !hasKnownStage
+      ? 'pending'
+      : index < completedMilestoneCount
+        ? 'completed'
+        : index === stageIndex
+          ? 'current'
+          : 'pending';
     return statuses;
-  }, {}), [completedMilestoneCount, milestones]);
+  }, {}), [completedMilestoneCount, hasKnownStage, milestones, stageIndex]);
 
   useEffect(() => {
     clearLegacyStudentStorage();

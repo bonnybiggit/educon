@@ -10,6 +10,7 @@ import { findStudentByEmail, formatStudentResponse, insertStudent } from '../mod
 import { validateStudentProfile } from './studentAuthController.js';
 import { AppError, asyncHandler, cleanString, normalizeEmail, sendSuccess } from '../middleware/http.js';
 import { setStudentSessionCookie } from '../middleware/studentAuth.js';
+import { DEFAULT_APPLICATION_STAGE } from '../constants/applicationStages.js';
 
 const provider = 'google';
 const allowedIssuers = new Set(['accounts.google.com', 'https://accounts.google.com']);
@@ -161,7 +162,7 @@ export const completeGoogleStudentProfile = asyncHandler(async (req, res) => {
     cgpa: cleanString(payload.cgpa),
     courseOfStudy: cleanString(payload.courseOfStudy),
     intakeSession: cleanString(payload.intakeSession),
-    currentStage: cleanString(payload.currentStage) || 'Initial Consultation',
+    currentStage: DEFAULT_APPLICATION_STAGE,
     status: 'pending',
     consent: true,
     uploads: {

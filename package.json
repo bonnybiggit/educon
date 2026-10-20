@@ -19,6 +19,7 @@
     "smoke:email-verification": "node server/email-verification-smoke-test.mjs",
     "smoke:student-auth": "node server/student-auth-smoke-test.mjs",
     "smoke:student-profile": "node server/student-profile-smoke-test.mjs",
+    "smoke:admin-student-stage": "node server/admin-student-stage-smoke-test.mjs",
     "start": "node server/index.js"
   },
   "dependencies": {

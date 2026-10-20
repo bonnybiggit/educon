@@ -2,16 +2,10 @@ import { ObjectId } from 'mongodb';
 import { findAdminStudents, formatStudentResponse, getStudentSummary, updateStudentById } from '../models/studentModel.js';
 import { logActivity } from '../services/activityLogService.js';
 import { AppError, cleanString, sendSuccess } from '../middleware/http.js';
+import { APPLICATION_STAGE_VALUES } from '../constants/applicationStages.js';
 
 const allowedStudentStatuses = ['pending', 'in review', 'accepted', 'declined'];
-const allowedStudentStages = [
-  'Initial Consultation',
-  'Document Preparation',
-  'Application Submitted',
-  'Document Verification',
-  'CAS Letter Processing',
-  'Visa Preparation',
-];
+const allowedStudentStages = APPLICATION_STAGE_VALUES;
 
 export const getAdminStudents = async (req, res) => {
   const { search = '', status = 'all', stage = 'all', page = 1, limit = 10 } = req.query;

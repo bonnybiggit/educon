@@ -12,15 +12,9 @@ import {
   X,
 } from 'lucide-react';
 import { getAdminStudents, updateAdminStudent } from '../../services/adminApi';
+import { APPLICATION_STAGE_VALUES, getApplicationStageLabel } from '../../data/applicationStages';
 
-const fallbackStages = [
-  'Initial Consultation',
-  'Document Preparation',
-  'Application Submitted',
-  'Document Verification',
-  'CAS Letter Processing',
-  'Visa Preparation',
-];
+const fallbackStages = APPLICATION_STAGE_VALUES;
 
 const fallbackStatuses = ['pending', 'in review', 'accepted', 'declined'];
 
@@ -282,7 +276,7 @@ const AdminStudents = () => {
               >
                 <option value="all">All stages</option>
                 {availableFilters.stages.map((stage) => (
-                  <option key={stage} value={stage}>{stage}</option>
+                  <option key={stage} value={stage}>{getApplicationStageLabel(stage)}</option>
                 ))}
               </select>
             </div>
@@ -356,7 +350,7 @@ const AdminStudents = () => {
                         <p className="mt-1 text-xs text-slate-500">{student.email}</p>
                       </td>
                       <td className="px-5 py-4 text-slate-600">{student.mobileNumber || 'Not provided'}</td>
-                      <td className="px-5 py-4 text-slate-700">{student.currentStage || 'Initial Consultation'}</td>
+                      <td className="px-5 py-4 text-slate-700">{getApplicationStageLabel(student.currentStage)}</td>
                       <td className="px-5 py-4"><StatusBadge status={student.status || 'pending'} /></td>
                       <td className="px-5 py-4 text-slate-600">{formatDate(student.createdAt)}</td>
                       <td className="px-5 py-4 text-right">
@@ -392,7 +386,7 @@ const AdminStudents = () => {
                     </div>
                     <div>
                       <dt className="font-semibold text-slate-500">Current Stage</dt>
-                      <dd className="text-slate-800">{student.currentStage || 'Initial Consultation'}</dd>
+                      <dd className="text-slate-800">{getApplicationStageLabel(student.currentStage)}</dd>
                     </div>
                     <div>
                       <dt className="font-semibold text-slate-500">Registered</dt>
@@ -514,13 +508,16 @@ const AdminStudents = () => {
                   <label htmlFor="student-detail-stage" className="text-sm font-semibold text-slate-700">Application Stage</label>
                   <select
                     id="student-detail-stage"
-                    value={selectedStudent.currentStage || 'Initial Consultation'}
+                    value={selectedStudent.currentStage || ''}
                     disabled={savingId === selectedStudent.id}
                     onChange={(event) => handleUpdate(selectedStudent, { currentStage: event.target.value })}
                     className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-primary-600 focus:ring-2 focus:ring-primary-100 disabled:opacity-60"
                   >
+                    {!APPLICATION_STAGE_VALUES.includes(selectedStudent.currentStage) && (
+                      <option value={selectedStudent.currentStage || ''} disabled>{getApplicationStageLabel(selectedStudent.currentStage)}</option>
+                    )}
                     {availableFilters.stages.map((stage) => (
-                      <option key={stage} value={stage}>{stage}</option>
+                      <option key={stage} value={stage}>{getApplicationStageLabel(stage)}</option>
                     ))}
                   </select>
                 </div>

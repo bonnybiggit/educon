@@ -5,6 +5,7 @@ import { clearStudentSessionCookie, getStudentSessionToken, setStudentSessionCoo
 import { deleteStudentById, findStudentByEmail, formatStudentResponse, insertStudent } from '../models/studentModel.js';
 import { issueStudentVerificationCode } from './studentEmailVerificationController.js';
 import { AppError, cleanString, isValidEmail, normalizeEmail, requireFields, sendSuccess } from '../middleware/http.js';
+import { DEFAULT_APPLICATION_STAGE } from '../constants/applicationStages.js';
 
 const requiredRegistrationFields = [
   'fullName',
@@ -72,6 +73,7 @@ export const registerStudent = async (req, res) => {
     mobileNumber: cleanString(payload.mobileNumber),
     countryCode: cleanString(payload.countryCode),
     country: cleanString(payload.country),
+    currentStage: DEFAULT_APPLICATION_STAGE,
     emailVerified: false,
     emailVerifiedAt: null,
     profileCompleted: false,

@@ -70,15 +70,6 @@ const courses = [
 
 const intakeSessions = ['Sept 2026', 'Jan 2027', 'Sept 2027', 'Jan 2028'];
 
-const stages = [
-  'Initial Consultation',
-  'Document Preparation',
-  'Application Submitted',
-  'Document Verification',
-  'CAS Letter Processing',
-  'Visa Preparation',
-];
-
 const PortalSetup = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,7 +101,6 @@ const PortalSetup = () => {
     cgpa: '',
     courseOfStudy: '',
     intakeSession: '',
-    currentStage: '',
     // other
     consent: false,
   });
@@ -575,14 +565,6 @@ const PortalSetup = () => {
                     </select>
                   </div>
 
-                  <div>
-                    <label htmlFor="currentStage" className="block text-sm font-semibold text-gray-800 mb-2">Current Application Stage *</label>
-                    <select id="currentStage" name="currentStage" value={formData.currentStage} onChange={handleChange} className={`w-full px-5 py-3.5 border-2 rounded-xl ${errors.currentStage? 'border-red-500':'border-gray-200'}`}>
-                      <option value="">Select current stage</option>
-                      {stages.map(stage => (<option key={stage} value={stage}>{stage}</option>))}
-                    </select>
-                    {errors.currentStage && <p className="mt-2 text-sm text-red-600">{errors.currentStage}</p>}
-                  </div>
                 </div>
 
                 <div className="flex justify-between gap-3 mt-6">

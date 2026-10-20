@@ -2,19 +2,15 @@ import { replaceStudentFiles } from '../models/studentFileModel.js';
 import { formatStudentResponse, updateStudentProfileById } from '../models/studentModel.js';
 import { AppError, asyncHandler, cleanString, sendSuccess } from '../middleware/http.js';
 
-const allowedStages = [
-  'Initial Consultation',
-  'Document Preparation',
-  'Application Submitted',
-  'Document Verification',
-  'CAS Letter Processing',
-  'Visa Preparation',
-];
-
+// currentStage is intentionally excluded: it is admin-controlled application progress,
+// students may only view it (see server/controllers/adminStudentController.js).
 const profileFields = [
   'dateOfBirth',
   'passportNumber',
   'profilePicture',
+  'mobileNumber',
+  'country',
+  'fullAddress',
   'targetCountry',
   'targetUniversity',
   'customUniversity',
@@ -23,7 +19,6 @@ const profileFields = [
   'cgpa',
   'courseOfStudy',
   'intakeSession',
-  'currentStage',
 ];
 
 const requiredCompletionFields = [
@@ -34,9 +29,15 @@ const requiredCompletionFields = [
   'courseOfStudy',
   'intakeSession',
   'currentStage',
-  'uploads.passport',
+  'uploads.waec',
+  'uploads.waecScratchCard',
+  'uploads.degreeCertificate',
   'uploads.transcripts',
+  'uploads.passport',
   'uploads.cv',
+  'uploads.statementOfPurpose',
+  'uploads.academicReferenceLetter',
+  'uploads.professionalReferenceLetter',
 ];
 
 const forbiddenFields = new Set(['email', 'studentId', 'id', '_id', 'password', 'confirmPassword', 'provider', 'subject', 'authProviders']);
@@ -72,9 +73,6 @@ const validateProfilePatch = (payload) => {
     patch[field] = cleanString(payload[field]);
   });
 
-  if (patch.currentStage && !allowedStages.includes(patch.currentStage)) {
-    throw new AppError('Invalid current stage', 400);
-  }
   if (patch.profilePicture && patch.profilePicture.length > 3 * 1024 * 1024) {
     throw new AppError('Profile picture must be 3MB or smaller', 400);
   }
