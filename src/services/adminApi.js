@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest, getApiBaseUrl } from './api';
 
 export const adminLogin = (credentials) => apiRequest('/api/admin/login', {
   method: 'POST',
@@ -65,6 +65,18 @@ export const updateAdminStudent = (id, updates) => apiRequest(`/api/admin/studen
   method: 'PATCH',
   body: JSON.stringify(updates),
 });
+
+export const fetchAdminStudentDocument = async (id, field, disposition = 'attachment') => {
+  const response = await fetch(
+    `${getApiBaseUrl()}/api/admin/students/${encodeURIComponent(id)}/documents/${encodeURIComponent(field)}?disposition=${disposition}`,
+    { credentials: 'include' },
+  );
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    return { success: false, message: result.message || 'Unable to open document' };
+  }
+  return { success: true, blob: await response.blob() };
+};
 
 export const getAdminEnquiries = () => apiRequest('/api/admin/enquiries');
 

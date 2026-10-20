@@ -1,5 +1,7 @@
 import { ObjectId } from 'mongodb';
-import { findAdminStudents, formatStudentResponse, getStudentSummary, updateStudentById } from '../models/studentModel.js';
+import { findStudentFile } from '../models/studentFileModel.js';
+import { studentDocumentFields } from '../middleware/studentUploads.js';
+import { findAdminStudents, findStudentById, formatStudentResponse, getStudentSummary, updateStudentById } from '../models/studentModel.js';
 import { logActivity } from '../services/activityLogService.js';
 import { AppError, cleanString, sendSuccess } from '../middleware/http.js';
 import { APPLICATION_STAGE_VALUES } from '../constants/applicationStages.js';
@@ -42,6 +44,55 @@ export const getAdminStudents = async (req, res) => {
       },
     },
   });
+};
+
+const inlineSafeTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const downloadSafeTypes = new Set([
+  ...inlineSafeTypes,
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
+const toSafeFilename = (name, field) => {
+  const cleaned = String(name || '').replace(/[\\/]/g, '_').replace(/[^\w.\- ]/g, '_').replace(/^\.+/, '').trim();
+  return (cleaned || field).slice(0, 120);
+};
+
+export const getAdminStudentDocument = async (req, res) => {
+  const { id, field } = req.params;
+  if (!ObjectId.isValid(id)) throw new AppError('Invalid student id', 400);
+  if (!studentDocumentFields.includes(field)) throw new AppError('Unknown document type', 400);
+
+  const student = await findStudentById(id);
+  if (!student) throw new AppError('Document not found', 404);
+  const studentId = student._id.toString();
+  const file = await findStudentFile(studentId, field);
+  if (!file || file.studentId !== studentId || !file.data) throw new AppError('Document not found', 404);
+
+  const rawData = file.data.buffer && !Buffer.isBuffer(file.data) ? Buffer.from(file.data.buffer) : file.data;
+  const data = Buffer.isBuffer(rawData) ? rawData : Buffer.from(rawData);
+  const contentType = downloadSafeTypes.has(file.contentType) ? file.contentType : 'application/octet-stream';
+  const wantsInline = req.query.disposition === 'inline' && inlineSafeTypes.has(contentType);
+  const filename = toSafeFilename(file.filename, field);
+
+  await logActivity({
+    adminId: req.admin.id,
+    actorEmail: req.admin.email,
+    action: wantsInline ? 'student_document_view' : 'student_document_download',
+    resource: 'student_document',
+    resourceId: studentId,
+    details: { field, filename },
+  });
+
+  res.set({
+    'Content-Type': contentType,
+    'Content-Length': String(data.length),
+    'Content-Disposition': `${wantsInline ? 'inline' : 'attachment'}; filename="${filename.replace(/"/g, '')}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': 'private, no-store',
+    'Content-Security-Policy': "default-src 'none'; sandbox",
+  });
+  res.status(200).send(data);
 };
 
 export const updateAdminStudent = async (req, res) => {

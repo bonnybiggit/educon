@@ -1,6 +1,6 @@
 import { env } from '../config/env.js';
 
-const isLocalDevelopmentOrigin = (origin) => {
+export const isLocalDevelopmentOrigin = (origin) => {
   if (env.nodeEnv === 'production') return false;
 
   try {

@@ -67,6 +67,9 @@ const completeFields = {
   targetUniversity: 'Test University',
   courseOfStudy: 'Computing',
   intakeSession: 'Sept 2026',
+  highestQualification: 'BSc',
+  previousInstitution: 'Test College',
+  cgpa: '4.2',
 };
 
 // Real magic-byte fixtures so the content-sniffing validation in studentUploads.js accepts them.
@@ -85,12 +88,12 @@ try {
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal((await response.json()).data.completion.isComplete, false);
-  assert.equal((await request('/student/profile', { headers: { Cookie: cookie } }).then((res) => res.json())).data.completion.totalFields, 16);
+  assert.equal((await request('/student/profile', { headers: { Cookie: cookie } }).then((res) => res.json()))  .data.completion.totalFields, 18);
 
-  // currentStage is already assigned (as it would be at registration), so it counts toward completion from the start.
+    // currentStage is admin-assigned and no longer part of the student's completion rule.
   response = await jsonPatch({ dateOfBirth: '2000-01-01' });
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).data.completion.completedFields, 2);
+    assert.equal((await response.json()).data.completion.completedFields, 1);
   assert.equal(student.preservedField, 'must remain');
 
   response = await jsonPatch({ email: 'attacker@example.invalid' });

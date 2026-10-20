@@ -13,7 +13,9 @@ import Login from './pages/Login'
 import PortalSetup from './pages/PortalSetup'
 import Dashboard from './pages/Dashboard'
 import StudentProfile from './pages/StudentProfile'
+import StudentSupport from './pages/StudentSupport'
 import StudentRouteGuard from './components/StudentRouteGuard'
+import StudentPortalLayout from './components/StudentPortalLayout'
 import Logout from './pages/Logout'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
@@ -39,6 +41,7 @@ import Seo from './components/Seo'
 const MainSiteContent = () => {
   const location = useLocation()
   const [showLogoSplash, setShowLogoSplash] = useState(true)
+  const isStudentPortal = ['/dashboard', '/profile', '/support'].includes(location.pathname)
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
@@ -52,7 +55,7 @@ const MainSiteContent = () => {
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      <Navbar />
+      {!isStudentPortal && <Navbar />}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -67,14 +70,15 @@ const MainSiteContent = () => {
           <Route path="/terms" element={<Terms />} />
           <Route path="/login" element={<Login />} />
           <Route path="/portal/setup" element={<PortalSetup />} />
-          <Route path="/dashboard" element={<StudentRouteGuard><Dashboard /></StudentRouteGuard>} />
-          <Route path="/profile" element={<StudentRouteGuard><StudentProfile /></StudentRouteGuard>} />
+          <Route path="/dashboard" element={<StudentRouteGuard><StudentPortalLayout><Dashboard /></StudentPortalLayout></StudentRouteGuard>} />
+          <Route path="/profile" element={<StudentRouteGuard><StudentPortalLayout><StudentProfile /></StudentPortalLayout></StudentRouteGuard>} />
+          <Route path="/support" element={<StudentRouteGuard><StudentPortalLayout><StudentSupport /></StudentPortalLayout></StudentRouteGuard>} />
           <Route path="/logout" element={<Logout />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      <Footer />
-      <WhatsAppButton />
+      {!isStudentPortal && <Footer />}
+      {!isStudentPortal && <WhatsAppButton />}
 
       {showLogoSplash && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">

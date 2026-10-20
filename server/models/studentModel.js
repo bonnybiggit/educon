@@ -187,4 +187,35 @@ export const updateStudentById = async (id, patch) => {
   );
 };
 
-export const updateStudentProfileById = async (id, patch) => updateStudentById(id, patch);
+// Draft edits and submission are conditional on the application not yet being submitted,
+// so concurrent requests cannot edit after, or submit twice.
+const updateUnsubmittedStudent = async (id, patch, { expectedUpdatedAt, session } = {}) => {
+  const checkVersion = expectedUpdatedAt !== undefined;
+  const versionTime = (value) => (value ? new Date(value).getTime() : 0);
+
+  if (isUsingMemoryStore()) {
+    const student = getMemoryStore().students.find((item) => item.id === id || item._id?.toString?.() === id);
+    if (!student || student.submittedAt) return null;
+    if (checkVersion && versionTime(student.updatedAt) !== versionTime(expectedUpdatedAt)) return null;
+    Object.assign(student, patch, { updatedAt: new Date() });
+    return student;
+  }
+
+  // `submittedAt: null` also matches legacy documents where the field is missing.
+  const filter = { _id: new ObjectId(id), submittedAt: null };
+  if (checkVersion) filter.updatedAt = expectedUpdatedAt ?? null;
+
+  return getCollection(env.studentsCollection).findOneAndUpdate(
+    filter,
+    { $set: { ...patch, updatedAt: new Date() } },
+    { returnDocument: 'after', ...(session ? { session } : {}) },
+  );
+};
+
+export const updateStudentProfileById = updateUnsubmittedStudent;
+
+export const submitStudentApplicationById = (id, expectedUpdatedAt = null) => updateUnsubmittedStudent(id, {
+  submissionStatus: 'submitted',
+  submittedAt: new Date(),
+  profileCompleted: true,
+}, { expectedUpdatedAt });

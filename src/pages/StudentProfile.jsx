@@ -1,16 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Check, CheckCircle2, ChevronLeft, ChevronRight, FileText, GraduationCap, Lock, Save, Upload, User } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  FileCheck2,
+  FileText,
+  GraduationCap,
+  ImagePlus,
+  Lock,
+  Save,
+  ShieldCheck,
+  UploadCloud,
+  UserRound,
+} from 'lucide-react';
 import Seo from '../components/Seo';
 import { universityData } from '../data/universityData';
 import { studyDestinationNames } from '../data/studyDestinations';
 import { getApplicationStageLabel } from '../data/applicationStages';
-import { getStudentProfile, updateStudentProfile } from '../services/studentApi';
+import { getStudentProfile, submitStudentApplication, updateStudentProfile } from '../services/studentApi';
 import { usePortal } from '../context/PortalContext';
 
 const intakeSessions = ['Sept 2026', 'Jan 2027', 'Sept 2027', 'Jan 2028'];
 
-// Fields the backend profile endpoint accepts (server/controllers/studentProfileController.js)
 const emptyForm = {
   dateOfBirth: '',
   passportNumber: '',
@@ -41,34 +57,149 @@ const emptyFiles = {
 };
 
 const academicDocumentTypes = [
-  { field: 'waec', label: 'WAEC', accept: 'image/*,.pdf' },
-  { field: 'waecScratchCard', label: 'WAEC Scratch Card', accept: 'image/jpeg,image/png,image/webp', imageOnly: true },
-  { field: 'degreeCertificate', label: 'Degree Certificate', accept: 'image/*,.pdf' },
-  { field: 'transcripts', label: 'Academic Transcript', accept: 'image/*,.pdf' },
+  { field: 'waec', label: 'WAEC result', description: 'Secondary school examination result', accept: 'image/*,.pdf' },
+  { field: 'waecScratchCard', label: 'WAEC scratch card', description: 'Upload an image of the scratch card', accept: 'image/jpeg,image/png,image/webp', imageOnly: true },
+  { field: 'degreeCertificate', label: 'Degree certificate', description: 'Certificate for your previous qualification', accept: 'image/*,.pdf' },
+  { field: 'transcripts', label: 'Academic transcript', description: 'Official transcript or academic record', accept: 'image/*,.pdf' },
 ];
 
 const applicationDocumentTypes = [
-  { field: 'passport', label: 'International Passport', accept: 'image/*,.pdf' },
-  { field: 'cv', label: 'CV', accept: '.pdf,.doc,.docx' },
-  { field: 'statementOfPurpose', label: 'Statement of Purpose', accept: '.pdf,.doc,.docx' },
-  { field: 'academicReferenceLetter', label: 'Academic Reference Letter', accept: '.pdf,.doc,.docx,image/*' },
-  { field: 'professionalReferenceLetter', label: 'Professional Reference Letter', accept: '.pdf,.doc,.docx,image/*' },
+  { field: 'passport', label: 'International passport', description: 'A clear copy of your passport information page', accept: 'image/*,.pdf' },
+  { field: 'cv', label: 'Curriculum vitae', description: 'Your current CV or résumé', accept: '.pdf,.doc,.docx' },
+  { field: 'statementOfPurpose', label: 'Statement of purpose', description: 'Your personal statement for your studies', accept: '.pdf,.doc,.docx' },
+  { field: 'academicReferenceLetter', label: 'Academic reference letter', description: 'A reference from an academic contact', accept: '.pdf,.doc,.docx,image/*' },
+  { field: 'professionalReferenceLetter', label: 'Professional reference letter', description: 'A reference from a professional contact', accept: '.pdf,.doc,.docx,image/*' },
 ];
 
 const allDocumentTypes = [...academicDocumentTypes, ...applicationDocumentTypes];
-
-const requiredFieldsForSubmit = ['dateOfBirth', 'passportNumber', 'targetCountry', 'targetUniversity', 'courseOfStudy', 'intakeSession', 'highestQualification', 'previousInstitution', 'cgpa'];
+const requiredFieldsForSubmit = [
+  'dateOfBirth',
+  'passportNumber',
+  'targetCountry',
+  'targetUniversity',
+  'courseOfStudy',
+  'intakeSession',
+  'highestQualification',
+  'previousInstitution',
+  'cgpa',
+];
 const requiredUploadsForSubmit = allDocumentTypes.map((doc) => doc.field);
 
-const fieldClass = 'w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20';
-const readOnlyFieldClass = 'w-full px-4 py-3 border-2 border-gray-100 bg-gray-50 rounded-xl text-gray-600 cursor-not-allowed';
-
 const steps = [
-  { key: 'personal', label: 'Personal Information', icon: User },
-  { key: 'academic', label: 'Academic Information', icon: GraduationCap },
-  { key: 'documents', label: 'Application Documents', icon: FileText },
-  { key: 'review', label: 'Review & Submit', icon: CheckCircle2 },
+  { key: 'personal', label: 'Personal Information', shortLabel: 'Personal', description: 'Your contact and identity details', icon: UserRound },
+  { key: 'academic', label: 'Academic Background', shortLabel: 'Academic', description: 'Your education and study plans', icon: GraduationCap },
+  { key: 'documents', label: 'Required Documents', shortLabel: 'Documents', description: 'Upload your supporting documents', icon: FileText },
+  { key: 'review', label: 'Review & Submit', shortLabel: 'Review', description: 'Check your application before submitting', icon: FileCheck2 },
 ];
+
+const inputClassName = (hasError = false) => (
+  `mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:ring-4 ${
+    hasError
+      ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100'
+      : 'border-slate-200 focus:border-primary-600 focus:ring-primary-100'
+  }`
+);
+
+const readOnlyClassName = 'mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500';
+
+const FieldError = ({ id, children }) => (
+  children ? <span id={id} className="mt-1.5 block text-xs font-medium text-rose-700">{children}</span> : null
+);
+
+const FormField = ({ label, name, value, onChange, error, as = 'input', type = 'text', className, children, ...props }) => {
+  const Control = as;
+  const errorId = `${name}-error`;
+  const controlProps = {
+    name,
+    type: as === 'input' ? type : undefined,
+    value,
+    onChange,
+    className: `${inputClassName(Boolean(error))} ${className || ''}`,
+    'aria-invalid': Boolean(error),
+    'aria-describedby': error ? errorId : undefined,
+    ...props,
+  };
+
+  return (
+    <label className="block text-sm font-semibold text-slate-700">
+      {label}
+      {as === 'input' ? <Control {...controlProps} /> : <Control {...controlProps}>{children}</Control>}
+      <FieldError id={errorId}>{error}</FieldError>
+    </label>
+  );
+};
+
+const DocumentUploadCard = ({ doc, file, existingFile, error, onChange }) => {
+  const inputId = `upload-${doc.field}`;
+  const uploadedFile = file?.name || existingFile;
+
+  return (
+    <div className={`relative rounded-2xl border bg-white p-4 transition sm:p-5 ${
+      error ? 'border-rose-300 shadow-sm shadow-rose-100' : 'border-slate-200 hover:border-primary-200 hover:shadow-md'
+    }`}>
+      <input
+        id={inputId}
+        type="file"
+        className="peer sr-only"
+        accept={doc.accept}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${doc.field}-error` : `${doc.field}-hint`}
+        onChange={(event) => onChange(doc.field, event.target.files?.[0] || null, { imageOnly: doc.imageOnly })}
+      />
+      <label htmlFor={inputId} className="block cursor-pointer">
+        <div className="flex items-start gap-3.5">
+          <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${
+            uploadedFile ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-primary-700'
+          }`}>
+            {uploadedFile
+              ? <FileCheck2 className="h-5 w-5" aria-hidden="true" />
+              : <UploadCloud className="h-5 w-5" aria-hidden="true" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-bold text-slate-900">{doc.label}</span>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">Required</span>
+            </span>
+            <span className="mt-1 block text-xs leading-relaxed text-slate-500">{doc.description}</span>
+          </span>
+        </div>
+        <span className={`mt-4 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-dashed px-3 py-2.5 ${
+          uploadedFile ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-300 bg-slate-50'
+        }`}>
+          <span className={`truncate text-xs font-semibold ${uploadedFile ? 'text-emerald-800' : 'text-slate-600'}`}>
+            {uploadedFile || 'Choose a file to upload'}
+          </span>
+          <span className="shrink-0 text-xs font-bold text-primary-700">{uploadedFile ? 'Replace' : 'Browse'}</span>
+        </span>
+        <span id={`${doc.field}-hint`} className="mt-2 block text-[11px] leading-relaxed text-slate-400">
+          {doc.imageOnly ? 'JPEG, PNG or WebP image · up to 5MB' : 'PDF or accepted document/image · up to 5MB'}
+        </span>
+      </label>
+      <FieldError id={`${doc.field}-error`}>{error}</FieldError>
+    </div>
+  );
+};
+
+const ReviewGroup = ({ title, onEdit, editLabel, children }) => (
+  <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div className="flex items-center justify-between gap-3">
+      <h3 className="text-base font-bold text-slate-900">{title}</h3>
+      {onEdit && (
+        <button type="button" onClick={onEdit} className="text-xs font-bold text-primary-700 hover:text-primary-900">
+          {editLabel || 'Edit'}
+        </button>
+      )}
+    </div>
+    {children}
+  </section>
+);
+
+const ReviewValue = ({ label, value }) => (
+  <div className="min-w-0">
+    <dt className="text-xs font-medium text-slate-500">{label}</dt>
+    <dd className="mt-1 break-words text-sm font-semibold text-slate-800">{value || '—'}</dd>
+  </div>
+);
 
 const StudentProfile = () => {
   const { verifySession } = usePortal();
@@ -81,6 +212,7 @@ const StudentProfile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [errors, setErrors] = useState({});
+
   const universitiesByCountry = useMemo(() => universityData.reduce((result, university) => {
     if (!studyDestinationNames.includes(university.country)) return result;
     result[university.country] ||= [];
@@ -99,7 +231,10 @@ const StudentProfile = () => {
     const profile = result.data?.profile || {};
     setStudent(profile);
     setCompletion(result.data?.completion || null);
-    setFormData((current) => ({ ...current, ...Object.fromEntries(Object.keys(emptyForm).map((key) => [key, profile[key] || ''])) }));
+    setFormData((current) => ({
+      ...current,
+      ...Object.fromEntries(Object.keys(emptyForm).map((key) => [key, profile[key] || ''])),
+    }));
     setStatus('ready');
   };
 
@@ -138,7 +273,9 @@ const StudentProfile = () => {
     requiredFieldsForSubmit.forEach((field) => {
       if (!String(formData[field] || '').trim()) nextErrors[field] = 'Required';
     });
-    if (formData.targetUniversity === 'OTHER' && !formData.customUniversity.trim()) nextErrors.customUniversity = 'Required';
+    if (formData.targetUniversity === 'OTHER' && !formData.customUniversity.trim()) {
+      nextErrors.customUniversity = 'Required';
+    }
     requiredUploadsForSubmit.forEach((field) => {
       if (!files[field] && !student?.uploads?.[field]) nextErrors[field] = 'Required';
     });
@@ -157,6 +294,10 @@ const StudentProfile = () => {
     try {
       const result = await updateStudentProfile(payload);
       if (!result.success) {
+        if (/can no longer be edited|already been submitted/i.test(result.message || '')) {
+          setFiles(emptyFiles);
+          await loadProfile();
+        }
         setMessage(result.message || 'Unable to save your profile.');
         return false;
       }
@@ -174,256 +315,522 @@ const StudentProfile = () => {
     }
   };
 
+  const isSubmitted = Boolean(student?.submittedAt);
+
   const handleSaveForLater = async () => {
+    if (isSubmitted) return;
     await persistProfile('Progress saved. You can continue later.');
   };
 
   const handleSubmitApplication = async () => {
+    if (isSubmitted || isSaving) return;
     const nextErrors = validateForSubmit();
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setMessage('Please complete the required fields highlighted below before submitting.');
-      const firstErrorStep = requiredFieldsForSubmit.some((field) => nextErrors[field]) || nextErrors.customUniversity
-        ? 1
-        : 2;
-      setActiveStep(firstErrorStep);
+      const hasPersonalErrors = nextErrors.dateOfBirth || nextErrors.passportNumber;
+      const hasAcademicErrors = [
+        'targetCountry',
+        'targetUniversity',
+        'customUniversity',
+        'courseOfStudy',
+        'intakeSession',
+        'highestQualification',
+        'previousInstitution',
+        'cgpa',
+      ].some((field) => nextErrors[field]);
+      setActiveStep(hasPersonalErrors ? 0 : hasAcademicErrors ? 1 : 2);
       return;
     }
-    await persistProfile('Application submitted successfully.');
+    const saved = await persistProfile('');
+    if (!saved) return;
+
+    setIsSaving(true);
+    try {
+      const result = await submitStudentApplication();
+      if (!result.success) {
+        const conflictMessage = result.message || 'Unable to submit your application.';
+        if (/already been submitted|changed while it was being submitted/i.test(conflictMessage)) {
+          setFiles(emptyFiles);
+          await loadProfile();
+        }
+        setMessage(conflictMessage);
+        return;
+      }
+      setStudent(result.data?.profile || student);
+      setCompletion(result.data?.completion || completion);
+      await verifySession();
+      setMessage('Application submitted successfully.');
+    } catch {
+      setMessage('Unable to submit your application right now.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const goNext = () => setActiveStep((current) => Math.min(current + 1, steps.length - 1));
-  const goBack = () => setActiveStep((current) => Math.max(current - 1, 0));
+  const goNext = () => {
+    setMessage('');
+    setActiveStep((current) => Math.min(current + 1, steps.length - 1));
+  };
+  const goBack = () => {
+    setMessage('');
+    setActiveStep((current) => Math.max(current - 1, 0));
+  };
+  const goToStep = (index) => {
+    setMessage('');
+    setActiveStep(index);
+  };
 
-  if (status === 'loading') return <div className="min-h-screen bg-gray-50 py-16 px-4 text-center text-gray-600">Loading your application...</div>;
-  if (status === 'error') return <div className="min-h-screen bg-gray-50 py-16 px-4 text-center"><p className="text-red-600">{message}</p><Link to="/dashboard" className="inline-block mt-5 text-primary-600 font-semibold">Back to dashboard</Link></div>;
+  if (status === 'loading') {
+    return (
+      <main className="min-h-[70vh] bg-slate-50 px-4 py-16 text-center text-slate-600">
+        <div className="mx-auto max-w-sm rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-primary-700">
+            <GraduationCap className="h-6 w-6" aria-hidden="true" />
+          </span>
+          <p className="mt-4 text-sm font-semibold">Loading your application…</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <main className="min-h-[70vh] bg-slate-50 px-4 py-16 text-center">
+        <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <CircleAlert className="mx-auto h-8 w-8 text-rose-600" aria-hidden="true" />
+          <p className="mt-3 text-sm text-rose-700" role="alert">{message}</p>
+          <Link to="/dashboard" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary-700">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to dashboard
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const currentStep = steps[activeStep];
+  const StepIcon = currentStep.icon;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <Seo title="Complete Your Application | Universe Consult" description="Complete your private Universe Consult student application." pathname="/profile" noIndex />
-      <div className="max-w-4xl mx-auto">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-primary-600 font-semibold hover:text-primary-800"><ArrowLeft className="w-4 h-4" />Back to dashboard</Link>
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mt-8 mb-8">
+    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+      <Seo
+        title="Complete Your Application | Universe Consult"
+        description="Complete your private Universe Consult student application."
+        pathname="/profile"
+        noIndex
+      />
+      <div className="mx-auto max-w-5xl">
+        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-primary-700 transition hover:text-primary-900">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Dashboard
+        </Link>
+
+        <header className="mt-6 flex flex-col gap-5 sm:mt-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-primary-600">Student application</p>
-            <h1 className="text-3xl md:text-4xl font-display font-bold text-gray-900 mt-2">{completion?.isComplete ? 'Your application is complete' : 'Complete Your Application'}</h1>
-            <p className="text-gray-600 mt-2">Save your progress and return whenever you are ready.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-700">Student application</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              {completion?.isComplete ? 'Your application is complete' : 'Build your study future'}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+              Share your details and documents with our team. You can save your progress and return at any time.
+            </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-5 py-4 min-w-52">
-            <div className="flex items-center justify-between text-sm font-semibold text-gray-700"><span>Completion</span><span>{completion?.percentage || 0}%</span></div>
-            <div className="h-2 bg-gray-100 rounded-full mt-3 overflow-hidden"><div className="h-full bg-primary-600 rounded-full transition-all" style={{ width: `${completion?.percentage || 0}%` }} /></div>
-            <p className="text-xs text-gray-500 mt-2">{completion?.completedFields || 0} of {completion?.totalFields || 0} required items</p>
+          <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:w-56">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Application completion</span>
+              <span className="text-lg font-bold text-slate-950">{completion?.percentage || 0}%</span>
+            </div>
+            <div
+              className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"
+              role="progressbar"
+              aria-label="Application completion"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={completion?.percentage || 0}
+            >
+              <div className="h-full rounded-full bg-gradient-to-r from-primary-700 to-sky-500 transition-all" style={{ width: `${completion?.percentage || 0}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              {completion?.completedFields || 0} of {completion?.totalFields || 0} required items
+            </p>
           </div>
-        </div>
+        </header>
 
-        {completion?.isComplete && <div className="mb-6 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"><CheckCircle2 className="w-5 h-5" />Your application is complete. You can still review and update it below.</div>}
-
-        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-8">
-            {steps.map((step, index) => {
-              const StepIcon = step.icon;
-              const isActive = index === activeStep;
-              const isDone = index < activeStep;
-              return (
-                <button key={step.key} type="button" onClick={() => setActiveStep(index)} className={`flex flex-col items-center gap-2 rounded-xl px-2 py-3 text-center transition-colors ${isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-400 hover:text-gray-600'}`}>
-                  <span className={`flex h-9 w-9 items-center justify-center rounded-full border-2 ${isActive ? 'border-primary-600 bg-primary-600 text-white' : isDone ? 'border-primary-600 text-primary-600' : 'border-gray-200'}`}>
-                    {isDone ? <Check className="w-4 h-4" /> : <StepIcon className="w-4 h-4" />}
-                  </span>
-                  <span className="text-xs font-semibold leading-tight">{step.label}</span>
-                </button>
-              );
-            })}
+        {isSubmitted && (
+          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm text-emerald-900" role="status">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+            <p>
+              Your application was submitted on {new Date(student.submittedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}.
+              It can no longer be edited. Your progress stage is updated by our team.
+            </p>
           </div>
+        )}
 
-          {activeStep === 0 && (
-            <section className="space-y-8">
+        {!isSubmitted && completion?.isComplete && (
+          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm text-emerald-900">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+            <p>Your application is complete. Review it on the last step and submit it when you are ready.</p>
+          </div>
+        )}
+
+        <section className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm sm:mt-8">
+          <div className="border-b border-slate-100 bg-white px-4 py-5 sm:px-7 sm:py-6">
+            <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Personal Information</h2>
-                <p className="text-sm text-gray-500 mt-1">Your name, contact and identity details.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                  <label className="text-sm font-semibold text-gray-700">Full name
-                    <input value={student?.fullName || ''} disabled className={`${readOnlyFieldClass} mt-2 font-normal`} />
+                <p className="text-xs font-bold uppercase tracking-[0.17em] text-primary-700">Guided application</p>
+                <p className="mt-1 text-sm text-slate-500">Step {activeStep + 1} of {steps.length}</p>
+              </div>
+              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-primary-800">
+                {currentStep.shortLabel}
+              </span>
+            </div>
+
+            <nav aria-label="Application steps">
+              <ol className="grid grid-cols-4 gap-2 sm:gap-3">
+                {steps.map((step, index) => {
+                  const Icon = step.icon;
+                  const isActive = index === activeStep;
+                  const isComplete = index < activeStep;
+                  const hasStepError = index === 0
+                    ? Boolean(errors.dateOfBirth || errors.passportNumber)
+                    : index === 1
+                      ? Boolean(errors.targetCountry || errors.targetUniversity || errors.customUniversity || errors.courseOfStudy || errors.intakeSession || errors.highestQualification || errors.previousInstitution || errors.cgpa)
+                      : index === 2 && requiredUploadsForSubmit.some((field) => errors[field]);
+
+                  return (
+                    <li key={step.key}>
+                      <button
+                        type="button"
+                        onClick={() => goToStep(index)}
+                        aria-current={isActive ? 'step' : undefined}
+                        className={`flex min-h-[74px] w-full flex-col items-center justify-center gap-1.5 rounded-xl border px-1.5 py-2 text-center transition sm:min-h-[82px] sm:flex-row sm:justify-start sm:gap-3 sm:px-3 ${
+                          isActive
+                            ? 'border-primary-700 bg-[#0b1b31] text-white shadow-md shadow-primary-950/10'
+                            : hasStepError
+                              ? 'border-rose-200 bg-rose-50 text-rose-800'
+                              : isComplete
+                                ? 'border-blue-100 bg-blue-50/70 text-primary-800'
+                                : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full sm:h-8 sm:w-8 ${
+                          isActive ? 'bg-white/10 text-accent-300' : isComplete ? 'bg-primary-700 text-white' : hasStepError ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {isComplete
+                            ? <Check className="h-4 w-4" aria-hidden="true" />
+                            : <Icon className="h-4 w-4" aria-hidden="true" />}
+                        </span>
+                        <span className={`text-[10px] font-bold leading-tight sm:text-xs ${isActive ? 'text-white' : ''}`}>
+                          <span className="hidden sm:inline">{step.label}</span>
+                          <span className="sm:hidden">{step.shortLabel}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </nav>
+          </div>
+
+          <div className="px-4 py-6 sm:px-7 sm:py-8">
+            <div className="mb-6 flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-primary-700">
+                <StepIcon className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-xl font-bold text-slate-950">{currentStep.label}</h2>
+                <p className="mt-1 text-sm text-slate-500">{currentStep.description}</p>
+              </div>
+            </div>
+
+            <fieldset disabled={isSubmitted} className="m-0 min-w-0 border-0 p-0">
+            {activeStep === 0 && (
+              <section aria-label="Personal Information" className="space-y-7">
+                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Full name
+                    <input value={student?.fullName || ''} disabled className={`${readOnlyClassName} cursor-not-allowed`} />
                   </label>
-                  <label className="text-sm font-semibold text-gray-700">Email address
-                    <span className="relative block mt-2">
-                      <input value={student?.email || ''} disabled className={`${readOnlyFieldClass} font-normal pr-10`} />
-                      <Lock className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Email address
+                    <span className="relative block">
+                      <input value={student?.email || ''} disabled className={`${readOnlyClassName} cursor-not-allowed pr-11`} />
+                      <Lock className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
                     </span>
-                    <span className="mt-1 flex items-center gap-1 text-xs font-normal text-green-700"><CheckCircle2 className="w-3.5 h-3.5" />Verified &amp; read-only</span>
+                    <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                      <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Verified and read-only
+                    </span>
                   </label>
-                  <label className="text-sm font-semibold text-gray-700">WhatsApp Number
-                    <input name="mobileNumber" value={formData.mobileNumber} onChange={handleChange} className={`${errors.mobileNumber ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                    <span className="mt-1 block text-xs font-normal text-gray-400">Your only contact number for this application.</span>
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700">Country
-                    <input name="country" value={formData.country} onChange={handleChange} className={`${errors.country ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700 md:col-span-2">Full address
-                    <textarea name="fullAddress" value={formData.fullAddress} onChange={handleChange} rows={2} className={`${fieldClass} mt-2 font-normal`} placeholder="Street, city, state" />
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700">Date of birth *
-                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className={`${errors.dateOfBirth ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700">Passport number *
-                    <input name="passportNumber" value={formData.passportNumber} onChange={handleChange} className={`${errors.passportNumber ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700 md:col-span-2">Profile picture
-                    <input type="file" accept="image/*" onChange={handleProfilePicture} className="mt-2 block w-full text-sm font-normal text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:font-semibold file:text-primary-700" />
-                  </label>
-                </div>
-              </div>
-            </section>
-          )}
 
-          {activeStep === 1 && (
-            <section className="space-y-8">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Academic Information</h2>
-                <p className="text-sm text-gray-500 mt-1">Your qualifications and study plan.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                  <label className="text-sm font-semibold text-gray-700">Highest qualification *
-                    <input name="highestQualification" value={formData.highestQualification} onChange={handleChange} className={`${errors.highestQualification ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700">Previous institution *
-                    <input name="previousInstitution" value={formData.previousInstitution} onChange={handleChange} className={`${errors.previousInstitution ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700">Course of study *
-                    <input name="courseOfStudy" value={formData.courseOfStudy} onChange={handleChange} className={`${errors.courseOfStudy ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700">CGPA *
-                    <input name="cgpa" value={formData.cgpa} onChange={handleChange} className={`${errors.cgpa ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                  </label>
-                </div>
-              </div>
+                  <FormField label="WhatsApp number" name="mobileNumber" value={formData.mobileNumber} onChange={handleChange} error={errors.mobileNumber} type="tel" />
+                  <FormField label="Country" name="country" value={formData.country} onChange={handleChange} error={errors.country} />
+                  <FormField label="Date of birth *" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} error={errors.dateOfBirth} type="date" />
+                  <FormField label="Passport number *" name="passportNumber" value={formData.passportNumber} onChange={handleChange} error={errors.passportNumber} />
+                  <FormField label="Full address" name="fullAddress" value={formData.fullAddress} onChange={handleChange} error={errors.fullAddress} as="textarea" rows={3} placeholder="Street, city, state" />
 
-              <div className="border-t border-gray-100 pt-7">
-                <h3 className="text-lg font-bold text-gray-900">Study plan</h3>
-                <p className="text-sm text-gray-500 mt-1">These details help us match you with the right destination.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                  <label className="text-sm font-semibold text-gray-700">Target country *
-                    <select name="targetCountry" value={formData.targetCountry} onChange={handleChange} className={`${errors.targetCountry ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`}><option value="">Select country</option>{studyDestinationNames.map((country) => <option key={country} value={country}>{country}</option>)}</select>
-                  </label>
-                  <label className="text-sm font-semibold text-gray-700">Target university *
-                    <select name="targetUniversity" value={formData.targetUniversity} onChange={handleChange} className={`${errors.targetUniversity ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`}><option value="">Select university</option>{(universitiesByCountry[formData.targetCountry] || []).map((university) => <option key={university} value={university}>{university}</option>)}<option value="OTHER">Other</option></select>
-                  </label>
-                  {formData.targetUniversity === 'OTHER' && <label className="text-sm font-semibold text-gray-700 md:col-span-2">Custom university *
-                    <input name="customUniversity" value={formData.customUniversity} onChange={handleChange} className={`${errors.customUniversity ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`} />
-                  </label>}
-                  <label className="text-sm font-semibold text-gray-700">Intake session *
-                    <select name="intakeSession" value={formData.intakeSession} onChange={handleChange} className={`${errors.intakeSession ? 'border-red-400' : ''} ${fieldClass} mt-2 font-normal`}><option value="">Select intake</option>{intakeSessions.map((intake) => <option key={intake} value={intake}>{intake}</option>)}</select>
-                  </label>
-                  <div className="text-sm font-semibold text-gray-700">
-                    <span>Current stage</span>
-                    <p className={`${readOnlyFieldClass} mt-2 font-normal`} aria-live="polite">
-                      {getApplicationStageLabel(student?.currentStage)}
+                  <div className="block text-sm font-semibold text-slate-700">
+                    Profile picture
+                    <label className="mt-2 flex min-h-[54px] cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-primary-300 hover:bg-blue-50/60">
+                      <ImagePlus className="h-5 w-5 shrink-0 text-primary-700" aria-hidden="true" />
+                      <span className="min-w-0 flex-1 truncate">{formData.profilePicture ? 'Profile picture selected' : 'Choose an image'}</span>
+                      <input type="file" accept="image/*" className="sr-only" onChange={handleProfilePicture} />
+                    </label>
+                    <span className="mt-1.5 block text-xs font-normal text-slate-400">Image files only</span>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {activeStep === 1 && (
+              <section aria-label="Academic Background" className="space-y-7">
+                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+                  <FormField label="Highest qualification *" name="highestQualification" value={formData.highestQualification} onChange={handleChange} error={errors.highestQualification} />
+                  <FormField label="Previous institution *" name="previousInstitution" value={formData.previousInstitution} onChange={handleChange} error={errors.previousInstitution} />
+                  <FormField label="Course of study *" name="courseOfStudy" value={formData.courseOfStudy} onChange={handleChange} error={errors.courseOfStudy} />
+                  <FormField label="CGPA *" name="cgpa" value={formData.cgpa} onChange={handleChange} error={errors.cgpa} />
+
+                  <FormField
+                    as="select"
+                    label="Target country *"
+                    name="targetCountry"
+                    value={formData.targetCountry}
+                    onChange={handleChange}
+                    error={errors.targetCountry}
+                  >
+                    <option value="">Select country</option>
+                    {studyDestinationNames.map((country) => <option key={country} value={country}>{country}</option>)}
+                  </FormField>
+                  <FormField
+                    as="select"
+                    label="Target university *"
+                    name="targetUniversity"
+                    value={formData.targetUniversity}
+                    onChange={handleChange}
+                    error={errors.targetUniversity}
+                  >
+                    <option value="">Select university</option>
+                    {(universitiesByCountry[formData.targetCountry] || []).map((university) => (
+                      <option key={university} value={university}>{university}</option>
+                    ))}
+                    <option value="OTHER">Other</option>
+                  </FormField>
+                  {formData.targetUniversity === 'OTHER' && (
+                    <FormField
+                      label="Custom university *"
+                      name="customUniversity"
+                      value={formData.customUniversity}
+                      onChange={handleChange}
+                      error={errors.customUniversity}
+                    />
+                  )}
+                  <FormField
+                    as="select"
+                    label="Intake session *"
+                    name="intakeSession"
+                    value={formData.intakeSession}
+                    onChange={handleChange}
+                    error={errors.intakeSession}
+                  >
+                    <option value="">Select intake</option>
+                    {intakeSessions.map((intake) => <option key={intake} value={intake}>{intake}</option>)}
+                  </FormField>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-primary-700 shadow-sm">
+                        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">Current application stage</p>
+                        <p className="mt-1 text-sm font-bold text-slate-900">{getApplicationStageLabel(student?.currentStage)}</p>
+                        <p className="mt-1 text-xs text-slate-500">Your application stage is updated by an administrator.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {activeStep === 2 && (
+              <section aria-label="Required Documents" className="space-y-8">
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                  <div className="flex items-start gap-3">
+                    <FileText className="mt-0.5 h-5 w-5 shrink-0 text-primary-700" aria-hidden="true" />
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">Prepare clear, readable copies</p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                        Each required file must be 5MB or smaller. Accepted formats vary by document; the WAEC scratch card accepts JPEG, PNG, or WebP images only.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-4">
+                    <h3 className="text-base font-bold text-slate-900">Academic documents</h3>
+                    <p className="mt-1 text-xs text-slate-500">Your educational records and results.</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {academicDocumentTypes.map((doc) => (
+                      <DocumentUploadCard
+                        key={doc.field}
+                        doc={doc}
+                        file={files[doc.field]}
+                        existingFile={student?.uploads?.[doc.field]}
+                        error={errors[doc.field]}
+                        onChange={handleDocumentFile}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-4">
+                    <h3 className="text-base font-bold text-slate-900">Application documents</h3>
+                    <p className="mt-1 text-xs text-slate-500">Identity, personal statements, and references.</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {applicationDocumentTypes.map((doc) => (
+                      <DocumentUploadCard
+                        key={doc.field}
+                        doc={doc}
+                        file={files[doc.field]}
+                        existingFile={student?.uploads?.[doc.field]}
+                        error={errors[doc.field]}
+                        onChange={handleDocumentFile}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {activeStep === 3 && (
+              <section aria-label="Review and submit" className="space-y-4">
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary-700" aria-hidden="true" />
+                    <p className="text-sm leading-relaxed text-slate-700">
+                      Review your information before submitting. Required missing fields or documents will be highlighted so you can return to the right step.
                     </p>
-                    <span className="mt-1 block text-xs font-normal text-gray-400">Your application stage is updated by an administrator.</span>
                   </div>
                 </div>
+
+                <ReviewGroup title="Personal information" onEdit={() => goToStep(0)}>
+                  <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <ReviewValue label="Full name" value={student?.fullName} />
+                    <ReviewValue label="Email address" value={student?.email} />
+                    <ReviewValue label="WhatsApp number" value={formData.mobileNumber} />
+                    <ReviewValue label="Country" value={formData.country} />
+                    <ReviewValue label="Full address" value={formData.fullAddress} />
+                    <ReviewValue label="Date of birth" value={formData.dateOfBirth} />
+                    <ReviewValue label="Passport number" value={formData.passportNumber} />
+                  </dl>
+                </ReviewGroup>
+
+                <ReviewGroup title="Academic background" onEdit={() => goToStep(1)}>
+                  <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <ReviewValue label="Highest qualification" value={formData.highestQualification} />
+                    <ReviewValue label="Previous institution" value={formData.previousInstitution} />
+                    <ReviewValue label="Course of study" value={formData.courseOfStudy} />
+                    <ReviewValue label="CGPA" value={formData.cgpa} />
+                    <ReviewValue label="Target country" value={formData.targetCountry} />
+                    <ReviewValue
+                      label="Target university"
+                      value={formData.targetUniversity === 'OTHER' ? formData.customUniversity : formData.targetUniversity}
+                    />
+                    <ReviewValue label="Intake session" value={formData.intakeSession} />
+                    <ReviewValue label="Current stage" value={getApplicationStageLabel(student?.currentStage)} />
+                  </dl>
+                </ReviewGroup>
+
+                <ReviewGroup title="Required documents" onEdit={() => goToStep(2)}>
+                  <ul className="mt-3 divide-y divide-slate-100">
+                    {allDocumentTypes.map((doc) => {
+                      const uploaded = files[doc.field]?.name || student?.uploads?.[doc.field];
+                      const missing = !uploaded;
+                      return (
+                        <li key={doc.field} className="flex items-center justify-between gap-3 py-3">
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-slate-800">{doc.label}</span>
+                            {uploaded && <span className="mt-0.5 block truncate text-xs text-slate-500">{uploaded}</span>}
+                          </span>
+                          <span className={`inline-flex shrink-0 items-center gap-1.5 text-xs font-bold ${missing ? 'text-amber-700' : 'text-emerald-700'}`}>
+                            {missing
+                              ? <><CircleAlert className="h-4 w-4" aria-hidden="true" /> Required</>
+                              : <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Ready</>}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </ReviewGroup>
+              </section>
+            )}
+            </fieldset>
+
+            {message && (
+              <div className={`mt-6 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm ${
+                message.includes('successfully') || message.includes('saved.')
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                  : 'border-amber-200 bg-amber-50 text-amber-900'
+              }`} role="status" aria-live="polite">
+                {message.includes('successfully') || message.includes('saved.')
+                  ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  : <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />}
+                <span>{message}</span>
+              </div>
+            )}
+
+            <div className="mt-7 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center justify-between gap-2 sm:justify-start">
+                <button
+                  type="button"
+                  onClick={goBack}
+                  disabled={activeStep === 0 || isSaving}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" /> Back
+                </button>
+                <button
+                  type="button"
+                  disabled={isSaving || isSubmitted}
+                  onClick={handleSaveForLater}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 sm:px-4"
+                >
+                  <Save className="h-4 w-4" aria-hidden="true" />
+                  {isSaving ? 'Saving…' : 'Save for later'}
+                </button>
               </div>
 
-              <div className="border-t border-gray-100 pt-7">
-                <h3 className="text-lg font-bold text-gray-900">Academic documents</h3>
-                <p className="text-sm text-gray-500 mt-1">PDF or approved image/document files, up to 5MB each. WAEC Scratch Card accepts images only (JPEG, PNG, WebP).</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                  {academicDocumentTypes.map((doc) => (
-                    <label key={doc.field} className={`flex items-center gap-3 rounded-xl border-2 border-dashed p-4 text-sm font-semibold cursor-pointer ${errors[doc.field] ? 'border-red-300' : 'border-gray-200 hover:border-primary-400'} text-gray-700`}>
-                      <Upload className="w-5 h-5 text-primary-600 shrink-0" />
-                      <span className="min-w-0"><span className="block">{doc.label} upload{doc.imageOnly ? ' (images only)' : ''}</span><span className="block text-xs font-normal text-gray-500 truncate">{files[doc.field]?.name || student?.uploads?.[doc.field] || 'Choose file'}</span>{errors[doc.field] && <span className="block text-xs font-normal text-red-600">{errors[doc.field]}</span>}</span>
-                      <input type="file" className="sr-only" accept={doc.accept} onChange={(event) => handleDocumentFile(doc.field, event.target.files?.[0] || null, { imageOnly: doc.imageOnly })} />
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-
-          {activeStep === 2 && (
-            <section className="space-y-8">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Application Documents</h2>
-                <p className="text-sm text-gray-500 mt-1">PDF or approved image/document files, up to 5MB each.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                  {applicationDocumentTypes.map((doc) => (
-                    <label key={doc.field} className={`flex items-center gap-3 rounded-xl border-2 border-dashed p-4 text-sm font-semibold cursor-pointer ${errors[doc.field] ? 'border-red-300' : 'border-gray-200 hover:border-primary-400'} text-gray-700`}>
-                      <Upload className="w-5 h-5 text-primary-600 shrink-0" />
-                      <span className="min-w-0"><span className="block">{doc.label} upload</span><span className="block text-xs font-normal text-gray-500 truncate">{files[doc.field]?.name || student?.uploads?.[doc.field] || 'Choose file'}</span>{errors[doc.field] && <span className="block text-xs font-normal text-red-600">{errors[doc.field]}</span>}</span>
-                      <input type="file" className="sr-only" accept={doc.accept} onChange={(event) => handleDocumentFile(doc.field, event.target.files?.[0] || null, { imageOnly: doc.imageOnly })} />
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-
-          {activeStep === 3 && (
-            <section className="space-y-8">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Review &amp; Submit</h2>
-                <p className="text-sm text-gray-500 mt-1">Check your details before submitting your application.</p>
-
-                <div className="mt-5 space-y-5">
-                  <div className="rounded-xl border border-gray-200 p-5">
-                    <h3 className="font-bold text-gray-900">Personal information</h3>
-                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mt-3 text-sm">
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Full name</dt><dd className="font-semibold text-gray-800">{student?.fullName || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Email address</dt><dd className="font-semibold text-gray-800">{student?.email || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">WhatsApp number</dt><dd className="font-semibold text-gray-800">{formData.mobileNumber || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Country</dt><dd className="font-semibold text-gray-800">{formData.country || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Full address</dt><dd className="font-semibold text-gray-800">{formData.fullAddress || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Date of birth</dt><dd className="font-semibold text-gray-800">{formData.dateOfBirth || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Passport number</dt><dd className="font-semibold text-gray-800">{formData.passportNumber || '—'}</dd></div>
-                    </dl>
-                  </div>
-
-                  <div className="rounded-xl border border-gray-200 p-5">
-                    <h3 className="font-bold text-gray-900">Academic information</h3>
-                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mt-3 text-sm">
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Highest qualification</dt><dd className="font-semibold text-gray-800">{formData.highestQualification || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Previous institution</dt><dd className="font-semibold text-gray-800">{formData.previousInstitution || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Course of study</dt><dd className="font-semibold text-gray-800">{formData.courseOfStudy || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">CGPA</dt><dd className="font-semibold text-gray-800">{formData.cgpa || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Target country</dt><dd className="font-semibold text-gray-800">{formData.targetCountry || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Target university</dt><dd className="font-semibold text-gray-800">{(formData.targetUniversity === 'OTHER' ? formData.customUniversity : formData.targetUniversity) || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Intake session</dt><dd className="font-semibold text-gray-800">{formData.intakeSession || '—'}</dd></div>
-                      <div className="flex justify-between sm:block"><dt className="text-gray-500">Current stage</dt><dd className="font-semibold text-gray-800">{getApplicationStageLabel(student?.currentStage)}</dd></div>
-                    </dl>
-                  </div>
-
-                  <div className="rounded-xl border border-gray-200 p-5">
-                    <h3 className="font-bold text-gray-900">Uploaded documents</h3>
-                    <ul className="mt-3 space-y-2 text-sm">
-                      {allDocumentTypes.map((doc) => {
-                        const uploaded = files[doc.field]?.name || student?.uploads?.[doc.field];
-                        return (
-                          <li key={doc.field} className="flex items-center justify-between gap-3">
-                            <span className="text-gray-700">{doc.label}</span>
-                            {uploaded ? <span className="inline-flex items-center gap-1 text-green-700 font-semibold"><CheckCircle2 className="w-4 h-4" />{uploaded}</span> : <span className="text-gray-400">Not uploaded</span>}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {message && <p className="text-sm text-gray-700 rounded-lg bg-gray-50 px-4 py-3 mt-6" role="status">{message}</p>}
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 border-t border-gray-100 pt-6">
-            <div className="flex gap-3">
-              {activeStep > 0 && <button type="button" onClick={goBack} className="inline-flex items-center gap-1 px-4 py-3 rounded-lg font-semibold text-gray-600 hover:bg-gray-50"><ChevronLeft className="w-4 h-4" />Back</button>}
-              {activeStep < steps.length - 1 && <button type="button" onClick={goNext} className="inline-flex items-center gap-1 px-4 py-3 rounded-lg font-semibold text-primary-700 hover:bg-primary-50">Next<ChevronRight className="w-4 h-4" /></button>}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button type="button" disabled={isSaving} onClick={handleSaveForLater} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 disabled:opacity-50"><Save className="w-5 h-5" />{isSaving ? 'Saving...' : 'Save & Continue Later'}</button>
-              {activeStep === steps.length - 1 && <button type="button" disabled={isSaving} onClick={handleSubmitApplication} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50"><CheckCircle2 className="w-5 h-5" />{isSaving ? 'Submitting...' : 'Submit Application'}</button>}
+              {activeStep < steps.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={goNext}
+                  disabled={isSaving}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#0b1b31] px-5 text-sm font-bold text-white shadow-md transition hover:bg-primary-900 focus:outline-none focus:ring-4 focus:ring-primary-100 disabled:opacity-50"
+                >
+                  Continue <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isSaving || isSubmitted}
+                  onClick={handleSubmitApplication}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent-400 px-5 text-sm font-bold text-[#13243a] shadow-md transition hover:bg-accent-300 focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:opacity-50"
+                >
+                  {isSubmitted ? 'Application submitted' : isSaving ? 'Submitting…' : 'Submit application'}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
             </div>
           </div>
-        </div>
+        </section>
+
+        <p className="mt-5 text-center text-xs leading-relaxed text-slate-400">
+          Your application information is securely handled by Universe Consults.
+        </p>
       </div>
-    </div>
+    </main>
   );
 };
 

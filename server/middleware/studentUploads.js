@@ -20,6 +20,8 @@ const allowedMimeTypes = {
   professionalReferenceLetter: letterTypes,
 };
 
+export const studentDocumentFields = Object.keys(allowedMimeTypes);
+
 const uploadFields = Object.keys(allowedMimeTypes).map((name) => ({ name, maxCount: 1 }));
 
 // Magic-byte signatures so a spoofed extension/Content-Type cannot bypass the field's mimetype allow-list.

@@ -43,6 +43,8 @@ export const env = {
   studentOAuthPendingCollection: process.env.MONGODB_STUDENT_OAUTH_PENDING_COLLECTION || 'studentOAuthPending',
   studentEmailVerificationsCollection: process.env.MONGODB_STUDENT_EMAIL_VERIFICATIONS_COLLECTION || 'studentEmailVerifications',
   corsOrigins: getCorsOrigins(),
+  // Number of reverse-proxy hops to trust for req.ip (rate limiting); leave unset when not behind a proxy.
+  trustProxy: process.env.TRUST_PROXY,
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresInSeconds: Number(process.env.JWT_EXPIRES_IN_SECONDS || 60 * 60 * 8),
   adminCookieName: process.env.ADMIN_COOKIE_NAME || 'educon_admin_token',

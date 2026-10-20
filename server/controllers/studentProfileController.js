@@ -1,5 +1,6 @@
+import { runInTransaction } from '../config/database.js';
 import { replaceStudentFiles } from '../models/studentFileModel.js';
-import { formatStudentResponse, updateStudentProfileById } from '../models/studentModel.js';
+import { findStudentById, formatStudentResponse, submitStudentApplicationById, updateStudentProfileById } from '../models/studentModel.js';
 import { AppError, asyncHandler, cleanString, sendSuccess } from '../middleware/http.js';
 
 // currentStage is intentionally excluded: it is admin-controlled application progress,
@@ -26,9 +27,11 @@ const requiredCompletionFields = [
   'passportNumber',
   'targetCountry',
   'targetUniversity',
+  'highestQualification',
+  'previousInstitution',
+  'cgpa',
   'courseOfStudy',
   'intakeSession',
-  'currentStage',
   'uploads.waec',
   'uploads.waecScratchCard',
   'uploads.degreeCertificate',
@@ -42,22 +45,28 @@ const requiredCompletionFields = [
 
 const forbiddenFields = new Set(['email', 'studentId', 'id', '_id', 'password', 'confirmPassword', 'provider', 'subject', 'authProviders']);
 
+// Single completeness rule used for progress display, profileCompleted and submission.
 export const calculateProfileCompletion = (student) => {
-  const completedFields = requiredCompletionFields.filter((field) => {
+  const requiredFields = student.targetUniversity === 'OTHER'
+    ? [...requiredCompletionFields, 'customUniversity']
+    : requiredCompletionFields;
+  const completedFields = requiredFields.filter((field) => {
     const value = field.startsWith('uploads.')
       ? student.uploads?.[field.slice('uploads.'.length)]
       : student[field];
     return typeof value === 'string' ? value.trim() !== '' : Boolean(value);
   });
-  const totalFields = requiredCompletionFields.length;
+  const totalFields = requiredFields.length;
   return {
     completedFields: completedFields.length,
     totalFields,
     percentage: Math.round((completedFields.length / totalFields) * 100),
     isComplete: completedFields.length === totalFields,
-    missingFields: requiredCompletionFields.filter((field) => !completedFields.includes(field)),
+    missingFields: requiredFields.filter((field) => !completedFields.includes(field)),
   };
 };
+
+const SUBMITTED_MESSAGE = 'Your application has been submitted and can no longer be edited';
 
 const validateProfilePatch = (payload) => {
   const submittedFields = Object.keys(payload);
@@ -91,6 +100,7 @@ export const getStudentProfile = asyncHandler(async (req, res) => {
 
 export const updateStudentProfile = asyncHandler(async (req, res) => {
   res.set('Cache-Control', 'no-store');
+  if (req.student.submittedAt) throw new AppError(SUBMITTED_MESSAGE, 409);
   const patch = validateProfilePatch(req.body || {});
   const studentId = req.student._id.toString();
   const existingUploads = { ...(req.student.uploads || {}) };
@@ -104,9 +114,41 @@ export const updateStudentProfile = asyncHandler(async (req, res) => {
   const mergedStudent = { ...req.student, ...patch, uploads: existingUploads };
   patch.profileCompleted = calculateProfileCompletion(mergedStudent).isComplete;
 
-  const updatedStudent = await updateStudentProfileById(studentId, patch);
-  if (!updatedStudent) throw new AppError('Student profile not found', 404);
-  await replaceStudentFiles(studentId, incomingFiles);
-
+  // Student update and file writes commit together, and only while the application is unsubmitted.
+  const updatedStudent = await runInTransaction(async (session) => {
+    const updated = await updateStudentProfileById(studentId, patch, { session });
+    if (!updated) {
+      const current = await findStudentById(studentId);
+      throw current?.submittedAt ? new AppError(SUBMITTED_MESSAGE, 409) : new AppError('Student profile not found', 404);
+    }
+    await replaceStudentFiles(studentId, incomingFiles, { session });
+    return updated;
+  });
   sendSuccess(res, { message: 'Student profile updated', data: buildProfileResponse(updatedStudent) });
+});
+
+export const submitStudentApplication = asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (req.student.submittedAt) throw new AppError('Your application has already been submitted', 409);
+
+  // Capture the version used for validation; the final update only applies if it is unchanged.
+  const validatedUpdatedAt = req.student.updatedAt ?? null;
+  const { isComplete, missingFields } = calculateProfileCompletion(req.student);
+  if (!isComplete) {
+    throw new AppError(`Application is incomplete. Missing: ${missingFields.join(', ')}`, 400);
+  }
+
+  const studentId = req.student._id.toString();
+  const submittedStudent = await submitStudentApplicationById(studentId, validatedUpdatedAt);
+  if (!submittedStudent) {
+    const current = await findStudentById(studentId);
+    throw new AppError(
+      current?.submittedAt
+        ? 'Your application has already been submitted'
+        : 'Your application changed while it was being submitted. Please reload and review your application before submitting again.',
+      409,
+    );
+  }
+
+  sendSuccess(res, { message: 'Application submitted', data: buildProfileResponse(submittedStudent) });
 });

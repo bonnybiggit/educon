@@ -10,6 +10,8 @@ export const updateStudentProfile = (profileData) => apiRequest('/api/student/pr
   body: profileData,
 });
 
+export const submitStudentApplication = () => apiRequest('/api/student/profile/submit', { method: 'POST' });
+
 export const logoutStudent = () => apiRequest('/api/student/logout', { method: 'POST' });
 
 export const registerStudent = (studentData) => apiRequest('/api/register', {

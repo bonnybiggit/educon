@@ -29,7 +29,14 @@ export const saveStudentFiles = async (studentId, files) => {
   await getCollection(env.studentFilesCollection).insertMany(documents);
 };
 
-export const replaceStudentFiles = async (studentId, files) => {
+export const findStudentFile = async (studentId, field) => {
+  if (isUsingMemoryStore()) {
+    return getMemoryStore().studentFiles.find((file) => file.studentId === studentId && file.field === field) || null;
+  }
+  return getCollection(env.studentFilesCollection).findOne({ studentId, field });
+};
+
+export const replaceStudentFiles = async (studentId, files, { session } = {}) => {
   const documents = Object.entries(files || {})
     .filter(([, entries]) => entries?.[0])
     .map(([field, entries]) => {
@@ -56,9 +63,11 @@ export const replaceStudentFiles = async (studentId, files) => {
     return;
   }
 
-  await Promise.all(documents.map((document) => getCollection(env.studentFilesCollection).replaceOne(
-    { studentId, field: document.field },
-    document,
-    { upsert: true },
-  )));
+  const options = { upsert: true, ...(session ? { session } : {}) };
+  // Sequential: operations in one transaction session cannot run in parallel.
+  for (const document of documents) {
+    const replacement = { ...document };
+    delete replacement._id; // an existing document's immutable _id must not change
+    await getCollection(env.studentFilesCollection).replaceOne({ studentId, field: replacement.field }, replacement, options);
+  }
 };

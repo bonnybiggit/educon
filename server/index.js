@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { connectDatabase } from './config/database.js';
 import { env, isProduction, validateProductionEnv } from './config/env.js';
 import { corsOptions } from './middleware/corsOptions.js';
+import { csrfProtection } from './middleware/csrfProtection.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import adminRoutes from './routes/adminRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
@@ -23,7 +24,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, '..', 'dist');
 
+if (env.trustProxy) {
+  app.set('trust proxy', /^\d+$/.test(env.trustProxy) ? Number(env.trustProxy) : env.trustProxy);
+}
+
 app.use(cors(corsOptions));
+app.use('/api', csrfProtection);
 app.use(express.json({ limit: '8mb' }));
 
 app.use('/api', healthRoutes);

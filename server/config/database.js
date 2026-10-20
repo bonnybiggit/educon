@@ -52,6 +52,7 @@ export const ensureIndexes = async () => {
     db.collection(env.studentsCollection).createIndex({ email: 1 }, { unique: true }),
     db.collection(env.studentsCollection).createIndex({ createdAt: -1 }),
     db.collection(env.studentFilesCollection).createIndex({ studentId: 1, field: 1 }, { unique: true }),
+    db.collection('rateLimits').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     db.collection('studentSessions').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     db.collection(env.adminsCollection).createIndex({ email: 1 }, { unique: true }),
     db.collection(env.adminsCollection).createIndex({ role: 1, isActive: 1 }),
@@ -82,6 +83,29 @@ export const getCollection = (name) => {
 };
 
 export const isUsingMemoryStore = () => usingMemoryStore;
+
+const isTransactionUnsupported = (error) => error?.code === 20
+  || /transaction numbers are only allowed|transactions are not supported/i.test(error?.message || '');
+
+// Runs `work(session)` atomically. Standalone MongoDB servers (and the memory store) do not support
+// transactions; the first operation then fails before any write, so `work` is re-run without a session.
+export const runInTransaction = async (work) => {
+  if (usingMemoryStore || !client) return work(undefined);
+
+  const session = client.startSession();
+  try {
+    let result;
+    await session.withTransaction(async () => {
+      result = await work(session);
+    });
+    return result;
+  } catch (error) {
+    if (!isTransactionUnsupported(error)) throw error;
+    return work(undefined);
+  } finally {
+    await session.endSession();
+  }
+};
 
 export const getMemoryStore = () => memoryStore;
 

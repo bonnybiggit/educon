@@ -4,7 +4,7 @@ import { deleteAdminAccount, createAdmin, getAdmins, resetAdminPassword, updateA
 import { getActivityLogs } from '../controllers/adminActivityController.js';
 import { createAdminBlogPost, deleteAdminBlogPost, getAdminBlogPost, getAdminBlogPosts, updateAdminBlogPost } from '../controllers/adminBlogController.js';
 import { createAdminTestimonial, deleteAdminTestimonial, getAdminTestimonial, getAdminTestimonials, updateAdminTestimonial } from '../controllers/adminTestimonialController.js';
-import { getAdminStudents, updateAdminStudent } from '../controllers/adminStudentController.js';
+import { getAdminStudentDocument, getAdminStudents, updateAdminStudent } from '../controllers/adminStudentController.js';
 import { getAdminDashboardData } from '../controllers/adminDashboardController.js';
 import { getAdminSettings, updateAdminPassword, updateAdminProfile } from '../controllers/adminSettingsController.js';
 import { createAdminService, deleteAdminService, getAdminService, getAdminServices, updateAdminService } from '../controllers/adminServiceController.js';
@@ -16,11 +16,12 @@ import {
 } from '../controllers/enquiryController.js';
 import { requireAdmin, requireRole, requireSuperAdmin } from '../middleware/adminAuth.js';
 import { asyncHandler } from '../middleware/http.js';
+import { adminLoginLimiter } from '../middleware/rateLimit.js';
 import { ADMIN_ROLE } from '../models/adminModel.js';
 
 const router = Router();
 
-router.post('/login', asyncHandler(adminLogin));
+router.post('/login', adminLoginLimiter, asyncHandler(adminLogin));
 router.post('/logout', requireAdmin, asyncHandler(adminLogout));
 router.get('/me', requireAdmin, getAdminMe);
 router.get('/dashboard', requireAdmin, asyncHandler(getAdminDashboardData));
@@ -36,6 +37,7 @@ router.post('/admins/:id/reset-password', requireAdmin, requireSuperAdmin, async
 router.get('/activity-logs', requireAdmin, requireSuperAdmin, asyncHandler(getActivityLogs));
 
 router.get('/students', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(getAdminStudents));
+router.get('/students/:id/documents/:field', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(getAdminStudentDocument));
 router.patch('/students/:id', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(updateAdminStudent));
 
 router.get('/enquiries', requireAdmin, requireSuperAdmin, asyncHandler(getAdminEnquiries));

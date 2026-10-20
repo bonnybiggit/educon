@@ -11,10 +11,22 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { getAdminStudents, updateAdminStudent } from '../../services/adminApi';
+import { fetchAdminStudentDocument, getAdminStudents, updateAdminStudent } from '../../services/adminApi';
 import { APPLICATION_STAGE_VALUES, getApplicationStageLabel } from '../../data/applicationStages';
 
 const fallbackStages = APPLICATION_STAGE_VALUES;
+
+const documentFields = [
+  ['passport', 'International passport'],
+  ['waec', 'WAEC result'],
+  ['waecScratchCard', 'WAEC scratch card'],
+  ['degreeCertificate', 'Degree certificate'],
+  ['transcripts', 'Transcripts'],
+  ['cv', 'CV'],
+  ['statementOfPurpose', 'Statement of purpose'],
+  ['academicReferenceLetter', 'Academic reference letter'],
+  ['professionalReferenceLetter', 'Professional reference letter'],
+];
 
 const fallbackStatuses = ['pending', 'in review', 'accepted', 'declined'];
 
@@ -89,6 +101,26 @@ const AdminStudents = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingId, setSavingId] = useState(null);
+  const [documentError, setDocumentError] = useState('');
+
+  const handleDocument = async (studentId, field, action, filename = field) => {
+    setDocumentError('');
+    const result = await fetchAdminStudentDocument(studentId, field, action === 'view' ? 'inline' : 'attachment');
+    if (!result.success) {
+      setDocumentError(result.message);
+      return;
+    }
+    const url = URL.createObjectURL(result.blob);
+    if (action === 'view') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
 
   const hasActiveFilter = Boolean(query.search || query.status !== 'all' || query.stage !== 'all');
 
@@ -485,6 +517,30 @@ const AdminStudents = () => {
                       <p className="mt-1 text-sm font-semibold text-slate-900">{value || 'Not provided'}</p>
                     </div>
                   ))}
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700">Uploaded documents</h3>
+                  {documentError && <p className="mt-2 text-sm font-medium text-rose-600">{documentError}</p>}
+                  <ul className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200">
+                    {documentFields.map(([field, label]) => {
+                      const filename = selectedStudent.uploads?.[field];
+                      return (
+                        <li key={field} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900">{label}</p>
+                            <p className="truncate text-xs text-slate-500">{filename || 'Not uploaded'}</p>
+                          </div>
+                          {filename && (
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => handleDocument(selectedStudent.id, field, 'view')} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">View</button>
+                              <button type="button" onClick={() => handleDocument(selectedStudent.id, field, 'download', filename)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Download</button>
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               </div>
 
