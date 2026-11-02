@@ -23,7 +23,7 @@ const sign = (content) => crypto
 const getAdminCookieOptions = () => ({
   httpOnly: true,
   secure: isProduction,
-  sameSite: isProduction ? 'none' : 'lax',
+  sameSite: 'lax',
   maxAge: env.jwtExpiresInSeconds * 1000,
   path: '/',
 });

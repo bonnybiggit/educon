@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 dotenv.config({ path: '.env.local' });
 
-const fallbackSiteUrl = 'https://universeconsults.netlify.app';
+const fallbackSiteUrl = 'https://universeconsultsedu.com';
 const siteUrl = (process.env.VITE_SITE_URL || fallbackSiteUrl).replace(/\/+$/, '');
 const publicDir = path.join(process.cwd(), 'public');
 

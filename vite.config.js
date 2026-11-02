@@ -7,7 +7,7 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const siteUrl = (env.VITE_SITE_URL || 'https://universeconsults.netlify.app').replace(/\/+$/, '')
+  const siteUrl = (env.VITE_SITE_URL || 'https://universeconsultsedu.com').replace(/\/+$/, '')
 
   return {
     plugins: [

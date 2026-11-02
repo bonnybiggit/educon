@@ -7,4 +7,4 @@ Disallow: /login
 Disallow: /logout
 Disallow: /portal/
 
-Sitemap: https://universeconsults.netlify.app/sitemap.xml
+Sitemap: https://universeconsultsedu.com/sitemap.xml

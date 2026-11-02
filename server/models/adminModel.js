@@ -34,11 +34,11 @@ export const findAdminByEmail = async (email) => {
   return getCollection(env.adminsCollection).findOne({ email });
 };
 
-export const findBootstrapAdmin = async () => {
+export const countAdmins = async () => {
   if (isUsingMemoryStore()) {
-    return getMemoryStore().admins.find((admin) => admin.isBootstrapAdmin === true) || null;
+    return getMemoryStore().admins.length;
   }
-  return getCollection(env.adminsCollection).findOne({ isBootstrapAdmin: true });
+  return getCollection(env.adminsCollection).countDocuments();
 };
 
 export const findAdmins = async () => {
@@ -46,24 +46,6 @@ export const findAdmins = async () => {
     return [...getMemoryStore().admins].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
   return getCollection(env.adminsCollection).find().sort({ createdAt: -1 }).toArray();
-};
-
-export const clearOtherBootstrapAdmins = async (activeAdminId) => {
-  const activeId = activeAdminId.toString();
-  if (isUsingMemoryStore()) {
-    getMemoryStore().admins.forEach((admin) => {
-      if (admin.isBootstrapAdmin === true && admin._id.toString() !== activeId) {
-        admin.isBootstrapAdmin = false;
-        admin.updatedAt = new Date();
-      }
-    });
-    return;
-  }
-
-  await getCollection(env.adminsCollection).updateMany(
-    { isBootstrapAdmin: true, _id: { $ne: new ObjectId(activeId) } },
-    { $set: { isBootstrapAdmin: false, updatedAt: new Date() } }
-  );
 };
 
 export const findAdminById = async (id) => {
@@ -140,38 +122,4 @@ export const countActiveSuperAdmins = async (excludeId = '') => {
   const query = { role: ADMIN_ROLE.SUPER_ADMIN, isActive: true };
   if (excludedId) query._id = { $ne: new ObjectId(excludedId) };
   return getCollection(env.adminsCollection).countDocuments(query);
-};
-
-export const migrateAdminRoles = async (bootstrapEmail) => {
-  const normalizedBootstrapEmail = String(bootstrapEmail || '').trim().toLowerCase();
-  const now = new Date();
-
-  if (isUsingMemoryStore()) {
-    getMemoryStore().admins.forEach((admin) => {
-      const nextRole = admin.email === normalizedBootstrapEmail || admin.isBootstrapAdmin
-        ? ADMIN_ROLE.SUPER_ADMIN
-        : normalizeAdminRole(admin.role);
-      admin.role = nextRole;
-      admin.isActive = admin.isActive !== false;
-      admin.updatedAt = admin.updatedAt || now;
-      admin.createdAt = admin.createdAt || now;
-    });
-    return;
-  }
-
-  const admins = await getCollection(env.adminsCollection).find().toArray();
-  await Promise.all(admins.map((admin) => {
-    const patch = {};
-    const nextRole = admin.email === normalizedBootstrapEmail || admin.isBootstrapAdmin
-      ? ADMIN_ROLE.SUPER_ADMIN
-      : normalizeAdminRole(admin.role);
-
-    if (admin.role !== nextRole) patch.role = nextRole;
-    if (admin.isActive === undefined) patch.isActive = true;
-    if (!admin.createdAt) patch.createdAt = now;
-    if (!admin.updatedAt || Object.keys(patch).length) patch.updatedAt = now;
-
-    if (!Object.keys(patch).length) return Promise.resolve();
-    return updateAdminById(admin._id, patch);
-  }));
 };

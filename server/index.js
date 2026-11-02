@@ -14,10 +14,7 @@ import healthRoutes from './routes/healthRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import testimonialRoutes from './routes/testimonialRoutes.js';
-import { bootstrapBlogPosts } from './services/blogBootstrapService.js';
 import { bootstrapAdminFromEnv } from './services/adminBootstrapService.js';
-import { bootstrapServices } from './services/serviceBootstrapService.js';
-import { bootstrapTestimonials } from './services/testimonialBootstrapService.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -59,11 +56,12 @@ const startServer = async () => {
   validateProductionEnv();
   await connectDatabase();
   await bootstrapAdminFromEnv();
-  await bootstrapBlogPosts();
-  await bootstrapServices();
-  await bootstrapTestimonials();
-  app.listen(env.port, () => {
-    console.log(`Server listening on http://localhost:${env.port}`);
+  await new Promise((resolve, reject) => {
+    const server = app.listen(env.port, () => {
+      console.log(`Server listening on port ${env.port}`);
+      resolve();
+    });
+    server.once('error', reject);
   });
 };
 

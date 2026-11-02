@@ -10,7 +10,7 @@ const { default: express } = await import('express');
 const { default: bcrypt } = await import('bcryptjs');
 const { ObjectId } = await import('mongodb');
 const { bootstrapAdminFromEnv } = await import('./services/adminBootstrapService.js');
-const { ADMIN_ROLE, findAdminByEmail, sanitizeAdmin, migrateAdminRoles } = await import('./models/adminModel.js');
+const { ADMIN_ROLE, findAdminByEmail, sanitizeAdmin } = await import('./models/adminModel.js');
 const { createAdminToken, requireAdmin, requireRole } = await import('./middleware/adminAuth.js');
 const { default: adminRoutes } = await import('./routes/adminRoutes.js');
 const { errorHandler } = await import('./middleware/errorHandler.js');
@@ -225,7 +225,7 @@ await expectRejectStatus(callController(deleteAdminAccount, {
   params: { id: superAdmin._id.toString() },
 }), 403, 'bootstrap SUPER_ADMIN could be deleted');
 
-store.admins.push({
+const legacyAdmin = {
   _id: new ObjectId(),
   name: 'Legacy Admin',
   email: 'legacy@example.invalid',
@@ -233,10 +233,12 @@ store.admins.push({
   isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),
-});
-await migrateAdminRoles('super@example.invalid');
-const legacyAdmin = await findAdminByEmail('legacy@example.invalid');
-assert(legacyAdmin.role === ADMIN_ROLE.ADMIN, 'legacy admin without role was not migrated to ADMIN');
+};
+store.admins.push(legacyAdmin);
+await bootstrapAdminFromEnv();
+const preservedLegacyAdmin = await findAdminByEmail('legacy@example.invalid');
+assert(preservedLegacyAdmin.role === undefined, 'startup changed an existing admin role');
+assert(preservedLegacyAdmin.passwordHash === legacyAdmin.passwordHash, 'startup changed an existing admin password');
 
 assert(store.activityLogs.some((log) => log.action === 'admin_created'), 'admin creation was not logged');
 assert(store.activityLogs.some((log) => log.action === 'admin_password_reset'), 'admin password reset was not logged');

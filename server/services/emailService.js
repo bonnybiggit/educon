@@ -31,7 +31,9 @@ export const sendVerificationEmail = async ({ email, code, recipientName }) => {
     await verificationEmailSender({ email, code, recipientName });
     return;
   }
-  if (!env.resendApiKey) throw new AppError('Email service is not configured', 503);
+  if (!env.resendApiKey || !env.emailFrom || !env.emailVerificationCodePepper) {
+    throw new AppError('Email service is not configured', 503);
+  }
   const resend = new Resend(env.resendApiKey);
   const message = buildVerificationEmail({ code, recipientName });
   const { error } = await resend.emails.send({

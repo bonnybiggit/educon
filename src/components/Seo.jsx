@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-export const FALLBACK_SITE_URL = 'https://universeconsults.netlify.app';
+export const FALLBACK_SITE_URL = 'https://universeconsultsedu.com';
 
 export const getSiteUrl = () => (
   (import.meta.env.VITE_SITE_URL || FALLBACK_SITE_URL).replace(/\/+$/, '')

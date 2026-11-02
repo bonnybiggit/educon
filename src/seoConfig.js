@@ -40,7 +40,7 @@ export const organizationJsonLd = {
   alternateName: 'Universe Consult',
   url: import.meta.env.VITE_SITE_URL || FALLBACK_SITE_URL,
   logo: `${(import.meta.env.VITE_SITE_URL || FALLBACK_SITE_URL).replace(/\/+$/, '')}/logo.png`,
-  email: 'Universeconsults@outlook.com',
+  email: 'support@universeconsultsedu.com',
   telephone: ['+447760907775', '+2347033988286'],
   address: [
     {

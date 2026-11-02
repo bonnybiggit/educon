@@ -30,7 +30,7 @@ const setPendingCookie = (res, token, expiresAt) => {
   res.cookie(pendingCookieName, token, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
+    sameSite: 'lax',
     path: '/api',
     expires: expiresAt,
   });
@@ -45,7 +45,7 @@ const getPendingToken = (req) => {
 const clearPendingCookie = (res) => res.clearCookie(pendingCookieName, {
   httpOnly: true,
   secure: isProduction,
-  sameSite: isProduction ? 'none' : 'lax',
+  sameSite: 'lax',
   path: '/api',
 });
 
@@ -200,4 +200,3 @@ export const completeGoogleStudentProfile = asyncHandler(async (req, res) => {
     },
   });
 });
-

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Seo from '../components/Seo';
 
-const supportEmail = 'Universeconsults@outlook.com';
+const supportEmail = 'support@universeconsultsedu.com';
 const whatsappNumber = '+44 7760 907775';
 const whatsappUrl = 'https://wa.me/447760907775';
 const nigeriaPhone = '+234 703 398 8286';
