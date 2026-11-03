@@ -11,11 +11,13 @@ const database = await import('./config/database.js');
 const { default: studentRoutes } = await import('./routes/studentRoutes.js');
 const { errorHandler } = await import('./middleware/errorHandler.js');
 const { corsOptions } = await import('./middleware/corsOptions.js');
-const { setVerificationEmailSenderForTests } = await import('./services/emailService.js');
+const { setPasswordResetEmailSenderForTests, setVerificationEmailSenderForTests } = await import('./services/emailService.js');
 await database.connectDatabase();
 assert.equal(database.isUsingMemoryStore(), true);
 const store = database.getMemoryStore();
 let verificationCode;
+let resetCode;
+setPasswordResetEmailSenderForTests(async ({ code }) => { resetCode = code; });
 setVerificationEmailSenderForTests(async ({ code }) => { verificationCode = code; });
 const app = express();
 app.use(cors(corsOptions));
@@ -51,6 +53,13 @@ const login = async () => {
 
 try {
   assert.equal((await request('/student/me')).status, 401);
+  for (const path of ['/student/auth/google', '/student/auth/google/callback']) {
+    const response = await request(path, { redirect: 'manual' });
+    assert.equal(response.status, 404, `${path} must not exist`);
+    assert.equal(response.headers.get('set-cookie'), null);
+  }
+  assert.equal((await request('/student/auth/google/complete', { body: {} })).status, 404);
+  assert.equal(store.studentSessions.length, 0, 'obsolete Google URLs must not create sessions');
   for (const field of ['fullName', 'email', 'password', 'country', 'mobileNumber', 'consent']) {
     const incomplete = { ...registration, email: `missing-${field}@example.invalid` };
     delete incomplete[field];
@@ -115,7 +124,7 @@ try {
 
   if (process.argv.includes('--browser')) {
     const { runBrowserChecks } = await import('./student-auth-browser-test.mjs');
-    await runBrowserChecks({ app, baseUrl, store, credentials });
+    await runBrowserChecks({ app, baseUrl, store, credentials, getResetCode: () => resetCode });
   }
 } finally {
   await new Promise((resolve) => server.close(resolve));

@@ -10,6 +10,7 @@ import FAQs from './pages/FAQs'
 import Contact from './pages/Contact'
 import ExploreUniversities from './pages/ExploreUniversities'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
 import PortalSetup from './pages/PortalSetup'
 import Dashboard from './pages/Dashboard'
 import StudentProfile from './pages/StudentProfile'
@@ -69,6 +70,7 @@ const MainSiteContent = () => {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/portal/setup" element={<PortalSetup />} />
           <Route path="/dashboard" element={<StudentRouteGuard><StudentPortalLayout><Dashboard /></StudentPortalLayout></StudentRouteGuard>} />
           <Route path="/profile" element={<StudentRouteGuard><StudentPortalLayout><StudentProfile /></StudentPortalLayout></StudentRouteGuard>} />

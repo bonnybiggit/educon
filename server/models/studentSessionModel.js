@@ -30,6 +30,15 @@ export const findStudentSession = async (token) => {
   return session && session.expiresAt.getTime() > Date.now() ? session : null;
 };
 
+export const deleteAllStudentSessions = async (studentId) => {
+  if (isUsingMemoryStore()) {
+    const store = getMemoryStore();
+    store.studentSessions = store.studentSessions.filter((item) => item.studentId !== studentId);
+    return;
+  }
+  await getCollection('studentSessions').deleteMany({ studentId });
+};
+
 export const deleteStudentSession = async (token) => {
   if (!/^[a-f0-9]{64}$/.test(token || '')) return;
   const id = hashToken(token);

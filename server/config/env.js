@@ -32,9 +32,8 @@ export const env = {
   testimonialsCollection: process.env.MONGODB_TESTIMONIALS_COLLECTION || 'testimonials',
   blogCollection: process.env.MONGODB_BLOG_COLLECTION || 'blogPosts',
   activityLogsCollection: process.env.MONGODB_ACTIVITY_LOGS_COLLECTION || 'activityLogs',
-  studentIdentitiesCollection: process.env.MONGODB_STUDENT_IDENTITIES_COLLECTION || 'studentIdentities',
-  studentOAuthStatesCollection: process.env.MONGODB_STUDENT_OAUTH_STATES_COLLECTION || 'studentOAuthStates',
-  studentOAuthPendingCollection: process.env.MONGODB_STUDENT_OAUTH_PENDING_COLLECTION || 'studentOAuthPending',
+  notificationLogCollection: process.env.MONGODB_NOTIFICATION_LOG_COLLECTION || 'notificationLog',
+  studentPasswordResetsCollection: process.env.MONGODB_STUDENT_PASSWORD_RESETS_COLLECTION || 'studentPasswordResets',
   studentEmailVerificationsCollection: process.env.MONGODB_STUDENT_EMAIL_VERIFICATIONS_COLLECTION || 'studentEmailVerifications',
   corsOrigins,
   // Number of reverse-proxy hops to trust for req.ip (rate limiting); leave unset when not behind a proxy.
@@ -45,12 +44,10 @@ export const env = {
   bootstrapAdminName: process.env.ADMIN_BOOTSTRAP_NAME,
   bootstrapAdminEmail: process.env.ADMIN_BOOTSTRAP_EMAIL,
   bootstrapAdminPassword: process.env.ADMIN_BOOTSTRAP_PASSWORD,
-  googleClientId: process.env.GOOGLE_CLIENT_ID,
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI,
   frontendUrl: normalizedFrontendUrl,
   resendApiKey: process.env.RESEND_API_KEY,
   emailFrom: process.env.EMAIL_FROM || '',
+  supportNotificationEmail: process.env.SUPPORT_NOTIFICATION_EMAIL || 'support@universeconsultsedu.com',
   emailVerificationCodePepper: process.env.EMAIL_VERIFICATION_CODE_PEPPER || '',
 };
 

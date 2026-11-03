@@ -1,5 +1,4 @@
 import { apiRequest } from './api';
-import { getApiBaseUrl } from './api';
 
 export const getStudentMe = () => apiRequest('/api/student/me', { cache: 'no-store' });
 
@@ -34,9 +33,12 @@ export const resendStudentEmailVerification = (email) => apiRequest('/api/studen
   body: JSON.stringify({ email }),
 });
 
-export const completeGoogleStudentProfile = (profileData) => apiRequest('/api/student/auth/google/complete', {
+export const requestStudentPasswordReset = (email) => apiRequest('/api/student/password-reset/request', {
   method: 'POST',
-  body: profileData,
+  body: JSON.stringify({ email }),
 });
 
-export const getGoogleStudentAuthUrl = () => `${getApiBaseUrl().replace(/\/+$/, '')}/api/student/auth/google`;
+export const confirmStudentPasswordReset = (payload) => apiRequest('/api/student/password-reset/confirm', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+});

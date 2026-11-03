@@ -52,7 +52,7 @@ VITE_SITE_URL=https://universeconsultsedu.com
 
 Use your Atlas database user's real credentials only in the cPanel environment settings. URL-encode special characters in the username or password. Do not set `PORT`; cPanel assigns it. Do not set `VITE_API_BASE_URL`: production frontend requests use same-origin `/api` paths, never `localhost`.
 
-Google OAuth and email verification are optional. Until configured, their endpoints return a service-unavailable response and do not block startup. To enable Google OAuth, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI=https://universeconsultsedu.com/api/student/auth/google/callback`, then add that exact callback URL to the Google OAuth client. To enable Resend email, set `RESEND_API_KEY`, `EMAIL_FROM=Universe Consult <support@universeconsultsedu.com>`, and a separate random `EMAIL_VERIFICATION_CODE_PEPPER`; verify the sender domain with Resend.
+Email delivery is optional for startup. Until configured, email verification and student password recovery return a service-unavailable response (the forgot-password page then reports that reset is unavailable) and do not block startup. Password recovery needs the same three variables as email verification, so students who registered through the removed Google sign-in cannot set a password until they are set. To enable Resend email, set `RESEND_API_KEY`, `EMAIL_FROM=Universe Consult <support@universeconsultsedu.com>`, and a separate random `EMAIL_VERIFICATION_CODE_PEPPER`; verify the sender domain with Resend. Each new student registration also sends a support notification (no passwords, codes or tokens) to `SUPPORT_NOTIFICATION_EMAIL` (default `support@universeconsultsedu.com`) after the account is saved and the verification code is sent; a failed notification never blocks registration, and a `notificationLog` collection (unique key per student, 90-day TTL) prevents duplicates. The first start after deploying creates the new `studentPasswordResets` and `notificationLog` collections and its indexes; no existing collection is changed.
 
 Do not set `ADMIN_BOOTSTRAP_EMAIL` or `ADMIN_BOOTSTRAP_PASSWORD` for an existing database. Startup no longer updates or migrates admin accounts; bootstrap can only create an admin when explicitly configured and the admins collection is empty.
 
@@ -78,7 +78,7 @@ Verification checklist:
 - Check a public API route such as `/api/services` and confirm the production browser does not request `localhost`.
 - Test admin and student login; confirm authentication cookies have `Secure`, `HttpOnly`, and `SameSite=Lax`.
 - Review cPanel application logs for startup errors. Keep credentials out of logs, source control, and deployment artifacts.
-- Google sign-in and email verification may remain unconfigured; configure their optional variables before enabling those services.
+- Email verification may remain unconfigured; configure its optional variables before enabling it.
 
 ## Deploying to Render
 
@@ -93,23 +93,21 @@ npm install && npm run build
 npm start
 ```
 
-4. The Blueprint configures the production site/API URLs, CORS origin, Google callback URL, email sender, and proxy trust. In Render, add the values for the `sync: false` variables:
+4. The Blueprint configures the production site/API URLs, CORS origin, email sender, and proxy trust. In Render, add the values for the `sync: false` variables:
 
 ```bash
 MONGODB_URI=your MongoDB Atlas connection string
 ADMIN_BOOTSTRAP_EMAIL=your admin email
 ADMIN_BOOTSTRAP_PASSWORD=a strong password at least 12 characters
-GOOGLE_CLIENT_ID=your Google OAuth client ID
-GOOGLE_CLIENT_SECRET=your Google OAuth client secret
 RESEND_API_KEY=your Resend API key
 EMAIL_VERIFICATION_CODE_PEPPER=a long random secret
 ```
 
 Keep these values in Render's environment settings; do not commit them. Render automatically provides `PORT`.
 
-Add `https://universeconsultsedu.com` as a custom domain on the Render service and point the domain's DNS records to Render. The Blueprint uses this domain for the frontend, same-origin API, and Google OAuth callback.
+Add `https://universeconsultsedu.com` as a custom domain on the Render service and point the domain's DNS records to Render. The Blueprint uses this domain for the frontend and same-origin API.
 
-Register `https://universeconsultsedu.com/api/student/auth/google/callback` as an authorized redirect URI for the Google OAuth client. Verify `universeconsultsedu.com` with Resend so it can send from `support@universeconsultsedu.com`.
+Verify `universeconsultsedu.com` with Resend so it can send from `support@universeconsultsedu.com`.
 
 ## Deploying to Netlify
 

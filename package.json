@@ -15,9 +15,10 @@
     "server": "node server/index.js",
     "smoke:bootstrap": "node server/bootstrap-smoke-test.mjs",
     "smoke:rbac": "node server/rbac-smoke-test.mjs",
-    "smoke:google-auth": "node server/google-auth-smoke-test.mjs",
     "smoke:email-verification": "node server/email-verification-smoke-test.mjs",
     "smoke:student-auth": "node server/student-auth-smoke-test.mjs",
+    "smoke:password-reset": "node server/student-password-reset-smoke-test.mjs",
+    "smoke:support-notification": "node server/support-notification-smoke-test.mjs",
     "smoke:student-profile": "node server/student-profile-smoke-test.mjs",
     "smoke:student-submission": "node server/student-submission-smoke-test.mjs",
     "smoke:auth-security": "node server/auth-security-smoke-test.mjs",
@@ -32,7 +33,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.4",
-    "google-auth-library": "^11.1.0",
     "lucide-react": "^1.17.0",
     "mongodb": "^6.11.0",
     "multer": "^2.4.0",
@@ -54,4 +54,3 @@
     "vite": "^8.0.12"
   }
 }
-  

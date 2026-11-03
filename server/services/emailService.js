@@ -3,6 +3,8 @@ import { env } from '../config/env.js';
 import { AppError } from '../middleware/http.js';
 
 let verificationEmailSender;
+let passwordResetEmailSender;
+let notificationEmailSender;
 
 const escapeHtml = (value) => String(value)
   .replaceAll('&', '&amp;')
@@ -53,6 +55,85 @@ export const sendVerificationEmail = async ({ email, code, recipientName }) => {
   }
 };
 
+export const isEmailConfigured = () => Boolean(
+  passwordResetEmailSender || (env.resendApiKey && env.emailFrom && env.emailVerificationCodePepper),
+);
+
+export const buildPasswordResetEmail = ({ code, recipientName = 'there' }) => ({
+  subject: 'Reset your Universe Consult password',
+  html: `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#172033;max-width:560px;margin:auto;padding:32px 20px">
+      <h1 style="color:#123b78;margin:0 0 16px">Universe Educational Consultancy</h1>
+      <p>Hello ${escapeHtml(recipientName)},</p>
+      <p>Use the code below to set a new password for your student account:</p>
+      <p style="font-size:32px;letter-spacing:8px;font-weight:700;color:#123b78;margin:24px 0">${escapeHtml(code)}</p>
+      <p>This code expires in 10 minutes and can only be used once.</p>
+      <p style="color:#667085;font-size:13px">If you did not request a password reset, you can safely ignore this email. Your password will not change.</p>
+    </div>
+  `,
+  text: `Hello ${recipientName}, your Universe Consult password reset code is ${code}. It expires in 10 minutes and can only be used once. If you did not request this, ignore this email.`,
+});
+
+export const sendPasswordResetEmail = async ({ email, code, recipientName }) => {
+  if (passwordResetEmailSender) {
+    await passwordResetEmailSender({ email, code, recipientName });
+    return;
+  }
+  if (!isEmailConfigured()) {
+    throw new AppError('Email service is not configured', 503);
+  }
+  const resend = new Resend(env.resendApiKey);
+  const message = buildPasswordResetEmail({ code, recipientName });
+  const { error } = await resend.emails.send({
+    from: env.emailFrom,
+    to: [email],
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+  });
+  if (error) {
+    console.error('Resend password reset delivery failed:', {
+      name: error.name,
+      message: error.message,
+      statusCode: error.statusCode ?? error.status ?? error.code,
+    });
+    throw new AppError('Email delivery failed', 503);
+  }
+};
+
 export const setVerificationEmailSenderForTests = (sender) => {
   verificationEmailSender = sender;
+};
+
+export const setPasswordResetEmailSenderForTests = (sender) => {
+  passwordResetEmailSender = sender;
+};
+
+export const isNotificationEmailConfigured = () => Boolean(
+  notificationEmailSender || (env.resendApiKey && env.emailFrom),
+);
+
+// Generic transactional send used by staff notifications; callers decide how to handle failure.
+export const sendEmail = async ({ to, subject, html, text }) => {
+  if (notificationEmailSender) {
+    await notificationEmailSender({ to, subject, html, text });
+    return;
+  }
+  if (!isNotificationEmailConfigured()) {
+    throw new AppError('Email service is not configured', 503);
+  }
+  const resend = new Resend(env.resendApiKey);
+  const { error } = await resend.emails.send({ from: env.emailFrom, to: [to], subject, html, text });
+  if (error) {
+    console.error('Resend email delivery failed:', {
+      name: error.name,
+      message: error.message,
+      statusCode: error.statusCode ?? error.status ?? error.code,
+    });
+    throw new AppError('Email delivery failed', 503);
+  }
+};
+
+export const setNotificationEmailSenderForTests = (sender) => {
+  notificationEmailSender = sender;
 };

@@ -4,6 +4,7 @@ import { createStudentSession, deleteStudentSession } from '../models/studentSes
 import { clearStudentSessionCookie, getStudentSessionToken, setStudentSessionCookie } from '../middleware/studentAuth.js';
 import { deleteStudentById, findStudentByEmail, formatStudentResponse, insertStudent } from '../models/studentModel.js';
 import { issueStudentVerificationCode } from './studentEmailVerificationController.js';
+import { notifyStudentRegistered } from '../services/notificationService.js';
 import { AppError, cleanString, isValidEmail, normalizeEmail, requireFields, sendSuccess } from '../middleware/http.js';
 import { DEFAULT_APPLICATION_STAGE } from '../constants/applicationStages.js';
 
@@ -92,6 +93,8 @@ export const registerStudent = async (req, res) => {
       await deleteStudentById(mongoId.toString());
       throw error;
     }
+    // Best-effort and never throws, so registration succeeds even if the support mailbox is unreachable.
+    await notifyStudentRegistered(studentDocument);
     genericResponse();
   } catch (error) {
     if (error.code === 11000) {
@@ -117,7 +120,7 @@ export const loginStudent = async (req, res) => {
     throw new AppError('Email verification required', 403);
   }
 
-  const validPassword = await bcrypt.compare(password, student.password);
+  const validPassword = typeof student.password === 'string' && await bcrypt.compare(password, student.password);
   if (!validPassword) {
     throw new AppError('Invalid email or password', 401);
   }

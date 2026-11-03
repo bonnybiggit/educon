@@ -81,3 +81,5 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000;
 export const studentLoginLimiter = createRateLimiter({ name: 'student-login', windowMs: FIFTEEN_MINUTES, max: 8, byEmail: true });
 export const adminLoginLimiter = createRateLimiter({ name: 'admin-login', windowMs: FIFTEEN_MINUTES, max: 5, byEmail: true });
 export const studentRegisterLimiter = createRateLimiter({ name: 'student-register', windowMs: 60 * 60 * 1000, max: 10 });
+export const studentPasswordResetRequestLimiter = createRateLimiter({ name: 'student-reset-request', windowMs: 60 * 60 * 1000, max: 5, byEmail: true });
+export const studentPasswordResetConfirmLimiter = createRateLimiter({ name: 'student-reset-confirm', windowMs: FIFTEEN_MINUTES, max: 8, byEmail: true });
