@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound, Lock, Mail } from 'lucide-react';
+import { Globe2, ShieldCheck, GraduationCap } from 'lucide-react';
 import Seo from '../components/Seo';
+import StudentAuthShell from '../components/StudentAuthShell';
 import { confirmStudentPasswordReset, requestStudentPasswordReset } from '../services/studentApi';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const highlights = [
+  { icon: ShieldCheck, text: 'Secure email verification' },
+  { icon: Globe2, text: 'Back to exploring universities' },
+  { icon: GraduationCap, text: 'Continue your application journey' },
+];
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -76,29 +84,33 @@ const ForgotPassword = () => {
     }
   };
 
-  const inputClass = 'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all';
+  const inputClass = 'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 transition focus:outline-none focus:ring-4 focus:ring-primary-500/15 focus:border-primary-600';
+  const primaryButton = 'w-full flex items-center justify-center gap-2 bg-primary-900 hover:bg-primary-800 text-white font-semibold py-3.5 rounded-xl border-b-4 border-accent-400 shadow-lg shadow-primary-900/20 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-400/50 disabled:opacity-50 disabled:cursor-not-allowed';
+  const focusLink = 'rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center px-4 py-12">
+    <StudentAuthShell
+      heading={<>Securely Recover <span className="text-accent-400">Your Account</span></>}
+      text="Forgot your password? We're here to help you get back to your education journey."
+      highlights={highlights}
+    >
       <Seo
         title="Reset Password | Universe Consult"
         description="Reset your Universe Consult student portal password."
         pathname="/forgot-password"
         noIndex
       />
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <Link to="/" className="inline-block mb-6">
-              <img src="/logo.png" alt="Universe Consult" className="h-16 mx-auto" />
-            </Link>
-            <h1 className="text-2xl font-display font-bold text-gray-900 mb-2">Reset your password</h1>
-            <p className="text-gray-600 text-sm">
-              {step === 'request' && 'Enter your registered email and we will send you a 6-digit reset code.'}
-              {step === 'confirm' && 'Enter the code we emailed you and choose a new password.'}
-              {step === 'done' && 'Your password has been updated.'}
-            </p>
-          </div>
+      <div className="mb-8">
+        <h2 className="text-2xl sm:text-3xl font-display font-bold text-primary-900">
+          {step === 'done' ? 'Password Updated' : 'Forgot Your Password?'}
+        </h2>
+        <p className="mt-2 text-gray-600">
+          {step === 'request' && 'Enter your registered email address to receive a verification code.'}
+          {step === 'confirm' && 'Enter the code we emailed you and choose a new password.'}
+          {step === 'done' && 'Your password has been updated.'}
+        </p>
+        <div className="mt-4 h-1 w-12 rounded-full bg-accent-400" />
+      </div>
 
           {step === 'request' && (
             <form onSubmit={handleRequest} className="space-y-6">
@@ -110,7 +122,7 @@ const ForgotPassword = () => {
                 </div>
               </div>
               {error && <p className="text-sm text-red-600 flex items-center gap-1" role="alert"><AlertCircle className="w-4 h-4" />{error}</p>}
-              <button type="submit" disabled={isLoading} className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              <button type="submit" disabled={isLoading} className={primaryButton}>
                 {isLoading ? 'Sending...' : 'Send Reset Code'}
               </button>
             </form>
@@ -131,7 +143,7 @@ const ForgotPassword = () => {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input type={showPassword ? 'text' : 'password'} id="newPassword" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={`${inputClass} pr-12`} placeholder="At least 6 characters" disabled={isLoading} />
-                  <button type="button" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600">
+                  <button type="button" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-gray-500 hover:text-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
@@ -144,10 +156,10 @@ const ForgotPassword = () => {
                 </div>
               </div>
               {error && <p className="text-sm text-red-600 flex items-center gap-1" role="alert"><AlertCircle className="w-4 h-4" />{error}</p>}
-              <button type="submit" disabled={isLoading} className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              <button type="submit" disabled={isLoading} className={primaryButton}>
                 {isLoading ? 'Updating...' : 'Update Password'}
               </button>
-              <button type="button" onClick={sendCode} disabled={isLoading || cooldown > 0} className="w-full text-sm font-semibold text-primary-600 hover:text-primary-800 disabled:text-gray-400">
+              <button type="button" onClick={sendCode} disabled={isLoading || cooldown > 0} className={`w-full text-sm font-semibold text-primary-700 hover:text-primary-900 disabled:text-gray-400 ${focusLink}`}>
                 {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
               </button>
             </form>
@@ -157,7 +169,7 @@ const ForgotPassword = () => {
             <div className="text-center space-y-6">
               <CheckCircle2 className="w-14 h-14 text-green-600 mx-auto" />
               <p className="text-sm text-gray-600">For your security you have been signed out of all devices.</p>
-              <button type="button" onClick={() => navigate('/login')} className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all">
+              <button type="button" onClick={() => navigate('/login')} className={primaryButton}>
                 Go to Sign In
               </button>
             </div>
@@ -165,12 +177,10 @@ const ForgotPassword = () => {
 
           {step !== 'done' && (
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <Link to="/login" className="block text-center text-sm text-primary-600 hover:text-primary-700 font-medium">Back to sign in</Link>
+              <Link to="/login" className={`block text-center text-sm text-primary-700 hover:text-primary-900 hover:underline font-medium ${focusLink}`}>Back to sign in</Link>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </StudentAuthShell>
   );
 };
 

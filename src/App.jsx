@@ -43,6 +43,8 @@ const MainSiteContent = () => {
   const location = useLocation()
   const [showLogoSplash, setShowLogoSplash] = useState(true)
   const isStudentPortal = ['/dashboard', '/profile', '/support'].includes(location.pathname)
+  const isStudentAuth = ['/login', '/portal/setup', '/forgot-password'].includes(location.pathname)
+  const hideSiteChrome = isStudentPortal || isStudentAuth
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
@@ -56,7 +58,7 @@ const MainSiteContent = () => {
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      {!isStudentPortal && <Navbar />}
+      {!hideSiteChrome && <Navbar />}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -79,8 +81,8 @@ const MainSiteContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      {!isStudentPortal && <Footer />}
-      {!isStudentPortal && <WhatsAppButton />}
+      {!hideSiteChrome && <Footer />}
+      {!hideSiteChrome && <WhatsAppButton />}
 
       {showLogoSplash && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Globe2, Compass, LineChart } from 'lucide-react';
+import StudentAuthShell from '../components/StudentAuthShell';
 import { registerStudent, resendStudentEmailVerification, verifyStudentEmail } from '../services/studentApi';
 import { usePortal } from '../context/PortalContext';
 import Seo from '../components/Seo';
@@ -173,28 +174,35 @@ const PortalSetup = () => {
     }));
   };
 
+  const inputBase = 'w-full px-4 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 transition focus:outline-none focus:ring-4 focus:ring-primary-500/15 focus:border-primary-600';
+  const inputClass = (name) => `${inputBase} ${errors[name] ? 'border-red-500' : 'border-gray-300'}`;
+  const labelClass = 'block text-sm font-semibold text-gray-800 mb-1.5';
+  const errorClass = 'mt-1.5 text-sm text-red-600';
+  const highlights = [
+    { icon: Globe2, text: 'Explore international universities' },
+    { icon: Compass, text: 'Get expert admission guidance' },
+    { icon: LineChart, text: 'Track your application journey' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 py-12 px-4">
+    <StudentAuthShell
+      heading={<>Your Global Education <span className="text-accent-400">Journey Starts Here</span></>}
+      text="Create your student profile and take the first step toward studying at your dream university."
+      highlights={highlights}
+    >
       <Seo
         title="Student Registration | Universe Consult"
         description="Create a private student portal profile with Universe Consult."
         pathname="/portal/setup"
         noIndex
       />
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <User className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-4xl font-display font-bold text-gray-900 mb-3">
-            Student Registration
-          </h1>
-          <p className="text-gray-600 max-w-md mx-auto">
-            Create your profile to begin your study abroad application journey
-          </p>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-10 border border-primary-100">
+      {!isEmailVerification && (
+            <div className="mb-8">
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-primary-900">Create Your Student Account</h2>
+              <p className="mt-2 text-gray-600">Complete your details to get started.</p>
+              <div className="mt-4 h-1 w-12 rounded-full bg-accent-400" />
+            </div>
+          )}
           {isEmailVerification ? (
             <div className="max-w-md mx-auto text-center">
               <div className="w-14 h-14 bg-accent-400 rounded-full flex items-center justify-center mx-auto mb-5 text-primary-900 font-bold text-xl">@</div>
@@ -223,77 +231,75 @@ const PortalSetup = () => {
               {verificationMessage && <p className="mt-4 text-sm text-gray-600" role="status">{verificationMessage}</p>}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit}             className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="md:col-span-2">
-                  <label htmlFor="fullName" className="block text-sm font-semibold text-gray-800 mb-2">Full Name *</label>
-                  <input type="text" id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} className={`w-full px-5 py-3.5 border-2 rounded-xl ${errors.fullName? 'border-red-500':'border-gray-200'}`} placeholder="Enter your legal full name" />
-                  {errors.fullName && <p className="mt-2 text-sm text-red-600">{errors.fullName}</p>}
+                  <label htmlFor="fullName" className={labelClass}>Full Name *</label>
+                  <input type="text" id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} className={inputClass('fullName')} placeholder="Enter your legal full name" aria-invalid={!!errors.fullName} />
+                  {errors.fullName && <p className={errorClass} role="alert">{errors.fullName}</p>}
                 </div>
 
                 <div className="md:col-span-2">
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-800 mb-2">Email Address</label>
-                  <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className={`w-full px-5 py-3.5 border-2 rounded-xl ${errors.email? 'border-red-500':'border-gray-200'}`} placeholder="your.email@example.com" />
-                  {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email}</p>}
+                  <label htmlFor="email" className={labelClass}>Email Address</label>
+                  <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className={inputClass('email')} placeholder="your.email@example.com" aria-invalid={!!errors.email} />
+                  {errors.email && <p className={errorClass} role="alert">{errors.email}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-semibold text-gray-800 mb-2">Password</label>
+                  <label htmlFor="password" className={labelClass}>Password</label>
                   <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} id="password" name="password" value={formData.password} onChange={handleChange} className={`w-full px-5 py-3.5 pr-12 border-2 rounded-xl ${errors.password? 'border-red-500':'border-gray-200'}`} placeholder="Create a password" />
-                    <button type="button" onClick={() => setShowPassword(prev => !prev)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary-600">
+                    <input type={showPassword ? 'text' : 'password'} id="password" name="password" value={formData.password} onChange={handleChange} className={`${inputClass('password')} pr-12`} placeholder="Create a password" aria-invalid={!!errors.password} />
+                    <button type="button" onClick={() => setShowPassword(prev => !prev)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-gray-500 hover:text-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {errors.password && <p className="mt-2 text-sm text-red-600">{errors.password}</p>}
+                  {errors.password && <p className={errorClass} role="alert">{errors.password}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-800 mb-2">Confirm Password</label>
+                  <label htmlFor="confirmPassword" className={labelClass}>Confirm Password</label>
                   <div className="relative">
-                    <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className={`w-full px-5 py-3.5 pr-12 border-2 rounded-xl ${errors.confirmPassword? 'border-red-500':'border-gray-200'}`} placeholder="Repeat password" />
-                    <button type="button" onClick={() => setShowConfirmPassword(prev => !prev)} aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary-600">
+                    <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className={`${inputClass('confirmPassword')} pr-12`} placeholder="Repeat password" aria-invalid={!!errors.confirmPassword} />
+                    <button type="button" onClick={() => setShowConfirmPassword(prev => !prev)} aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'} className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-gray-500 hover:text-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {errors.confirmPassword && <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className={errorClass} role="alert">{errors.confirmPassword}</p>}
                 </div>
 
                 <div>
-                  <label htmlFor="country" className="block text-sm font-semibold text-gray-800 mb-2">Country</label>
-                  <select id="country" name="countryCode" value={countries.find(c=>c.dial===formData.countryCode)?.code || formData.countryCode} onChange={handleCountryChange} className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl">
+                  <label htmlFor="country" className={labelClass}>Country</label>
+                  <select id="country" name="countryCode" value={countries.find(c=>c.dial===formData.countryCode)?.code || formData.countryCode} onChange={handleCountryChange} className={`${inputBase} border-gray-300`}>
                     <option value="">Select country</option>
                     {countries.map(c => (<option key={c.code} value={c.code}>{c.name}</option>))}
                   </select>
                 </div>
 
                 <div>
-                  <label htmlFor="mobileNumber" className="block text-sm font-semibold text-gray-800 mb-2">Mobile Number</label>
+                  <label htmlFor="mobileNumber" className={labelClass}>Mobile Number</label>
                   <div className="flex gap-2">
-                    <span className="inline-flex items-center px-3 py-3.5 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-600 font-medium">+{formData.countryCode}</span>
-                    <input type="tel" id="mobileNumber" name="mobileNumber" value={formData.mobileNumber} onChange={handleChange} className={`flex-1 px-4 py-3.5 border-2 rounded-xl ${errors.mobileNumber? 'border-red-500':'border-gray-200'}`} placeholder="e.g., 8123456789" />
+                    <span className="inline-flex items-center px-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600 font-medium">+{formData.countryCode}</span>
+                    <input type="tel" id="mobileNumber" name="mobileNumber" value={formData.mobileNumber} onChange={handleChange} className={`${inputClass('mobileNumber')} min-w-0 flex-1`} placeholder="e.g., 8123456789" aria-invalid={!!errors.mobileNumber} />
                   </div>
-                  {errors.mobileNumber && <p className="mt-2 text-sm text-red-600">{errors.mobileNumber}</p>}
+                  {errors.mobileNumber && <p className={errorClass} role="alert">{errors.mobileNumber}</p>}
                 </div>
               </div>
 
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" name="consent" checked={formData.consent} onChange={handleChange} className="w-5 h-5 mt-0.5" />
+                <input type="checkbox" name="consent" checked={formData.consent} onChange={handleChange} className="w-5 h-5 mt-0.5 accent-primary-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" />
                 <span className="text-sm text-gray-600">I consent to my data being handled as described in the Privacy Policy.</span>
               </label>
-              {errors.consent && <p className="text-sm text-red-600">{errors.consent}</p>}
+              {errors.consent && <p className="text-sm text-red-600" role="alert">{errors.consent}</p>}
 
-              {errors.submit && <p className="text-sm text-red-600 text-center">{errors.submit}</p>}
+              {errors.submit && <p className="text-sm text-red-600 text-center" role="alert">{errors.submit}</p>}
 
-              <div className="flex justify-between items-center gap-3">
-                <Link to="/login" className="text-sm text-primary-600 hover:underline">Already registered? Log in</Link>
-                <button type="submit" disabled={isSubmitting} className="px-6 py-3 bg-primary-600 text-white rounded-xl disabled:opacity-50">{isSubmitting ? 'Creating Account...' : 'Create Account'}</button>
-              </div>
+              <button type="submit" disabled={isSubmitting} className="w-full px-6 py-3.5 bg-primary-900 text-white rounded-xl font-semibold border-b-4 border-accent-400 shadow-lg shadow-primary-900/20 transition hover:bg-primary-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-400/50 disabled:opacity-50 disabled:cursor-not-allowed">{isSubmitting ? 'Creating Account...' : 'Create Account'}</button>
+              <p className="text-center">
+                <Link to="/login" className="text-sm font-medium text-primary-700 hover:text-primary-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded">Already registered? Log in</Link>
+              </p>
             </form>
           )}
-        </div>
-      </div>
-    </div>
+    </StudentAuthShell>
   );
 };
 
