@@ -44,24 +44,35 @@ export const requestAdminPasswordReset = async (req, res) => {
 
   if (admin && admin.isActive) {
     const adminId = admin._id.toString();
-    const existing = await findAdminPasswordReset(adminId);
-    const cooldownActive = existing && existing.resendAvailableAt.getTime() > Date.now();
-    // Account-wide cap across all IPs so the owner's inbox cannot be flooded with codes.
-    const withinHourlyCap = !cooldownActive
-      && (await incrementCounter(`admin-recovery:${adminId}`, 60 * 60 * 1000)) <= MAX_CODES_PER_ACCOUNT_PER_HOUR;
+    // An internal failure here must not become a distinguishable 500 (which would reveal that the account
+    // exists), so it is logged for the operator and the caller still receives the generic response.
+    try {
+      const existing = await findAdminPasswordReset(adminId);
+      const cooldownActive = existing && existing.resendAvailableAt.getTime() > Date.now();
+      // Account-wide cap across all IPs so the owner's inbox cannot be flooded with codes.
+      const withinHourlyCap = !cooldownActive
+        && (await incrementCounter(`admin-recovery:${adminId}`, 60 * 60 * 1000)) <= MAX_CODES_PER_ACCOUNT_PER_HOUR;
+      const created = withinHourlyCap ? await createOrReplaceAdminPasswordReset(adminId) : null;
 
-    if (withinHourlyCap) {
-      const { code, challenge } = await createOrReplaceAdminPasswordReset(adminId);
-      await logActivity({
-        adminId, actorEmail: admin.email, action: 'admin_password_reset_requested', resource: 'admin', resourceId: adminId,
-        details: { network: maskIp(req.ip) },
-      });
-      // Delivery runs in the background so response time does not reveal whether the account exists.
-      sendAdminPasswordResetEmail({ to: admin.email, code, recipientName: admin.name })
-        .catch(async (error) => {
-          console.error('Admin password reset email could not be delivered:', error.message);
-          await consumeAdminPasswordReset(adminId, challenge._id);
+      if (created) {
+        const { code, challenge } = created;
+        await logActivity({
+          adminId, actorEmail: admin.email, action: 'admin_password_reset_requested', resource: 'admin', resourceId: adminId,
+          details: { network: maskIp(req.ip) },
         });
+        // Delivery runs in the background so response time does not reveal whether the account exists.
+        sendAdminPasswordResetEmail({ to: admin.email, code, recipientName: admin.name })
+          .catch(async (error) => {
+            console.error('Admin password reset email could not be delivered:', { reason: error?.message });
+            try {
+              await consumeAdminPasswordReset(adminId, challenge._id);
+            } catch (cleanupError) {
+              console.error('Admin password reset cleanup failed:', { reason: cleanupError?.message });
+            }
+          });
+      }
+    } catch (error) {
+      console.error('Admin password reset request failed internally:', { name: error?.name, reason: error?.message });
     }
   }
 

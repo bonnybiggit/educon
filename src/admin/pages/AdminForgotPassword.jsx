@@ -7,6 +7,12 @@ const inputClass = 'w-full rounded-lg border border-slate-300 bg-white py-3 pl-1
 const iconClass = 'pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400';
 const buttonClass = 'mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-900 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-200 disabled:cursor-not-allowed disabled:opacity-70';
 
+const friendlyError = (result, fallback) => {
+  if (result.status === 429) return 'Too many attempts. Please wait a while and try again.';
+  if (result.status >= 500) return 'Password recovery is temporarily unavailable. Please try again later.';
+  return result.message || fallback;
+};
+
 const AdminForgotPassword = () => {
   const [step, setStep] = useState('request');
   const [email, setEmail] = useState('');
@@ -29,7 +35,7 @@ const AdminForgotPassword = () => {
     try {
       const result = await requestAdminPasswordReset(email.trim());
       if (!result.success) {
-        setError(result.message || 'Unable to process your request. Please try again.');
+        setError(friendlyError(result, 'Unable to process your request. Please try again.'));
         return;
       }
       setNotice('If an administrator account exists for that email, a 6-digit code has been sent. It expires in 10 minutes.');
@@ -56,7 +62,7 @@ const AdminForgotPassword = () => {
     try {
       const result = await confirmAdminPasswordReset({ email: email.trim(), code, password });
       if (!result.success) {
-        setError(result.message || 'Unable to reset your password. Please try again.');
+        setError(friendlyError(result, 'Unable to reset your password. Please try again.'));
         return;
       }
       navigate('/admin/login', { replace: true });

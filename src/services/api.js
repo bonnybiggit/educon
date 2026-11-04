@@ -49,6 +49,7 @@ export const apiRequest = async (path, options = {}) => {
     }
     return {
       success: false,
+      status: response.status,
       message: result.message || result.error || 'Request failed',
       data: result.data || {},
     };

@@ -56,6 +56,20 @@ Email delivery is optional for startup. Until configured, email verification and
 
 Do not set `ADMIN_BOOTSTRAP_EMAIL` or `ADMIN_BOOTSTRAP_PASSWORD` for an existing database. Startup no longer updates or migrates admin accounts; bootstrap can only create an admin when explicitly configured and the admins collection is empty.
 
+### Admin recovery and security alerts
+
+Admin "Forgot password?" sends a 6-digit code (10 minutes, single use, 5 attempts) to the email **stored on the admin account**, so it needs `RESEND_API_KEY`, `EMAIL_FROM` and `EMAIL_VERIFICATION_CODE_PEPPER` (the page reports "temporarily unavailable" otherwise). Optional: `ADMIN_SECURITY_ALERTS_ENABLED`, `ADMIN_LOGIN_ALERT_THRESHOLD`, `ADMIN_ALERT_COOLDOWN_SECONDS`, `ADMIN_LEGACY_TOKEN_COMPAT=false` (recommended) and, only if legacy sessions must be honoured, an absolute `ADMIN_LEGACY_TOKEN_UNTIL`. See `server/.env.example`; confirm `TRUST_PROXY` against a real client IP.
+
+If the sign-in email you want differs from the one stored, a site owner with server access can recover the existing account without creating one (run from the app root in the cPanel Node.js virtual environment, so the production variables are loaded):
+
+```bash
+npm run admin:recover -- --list                                   # masked emails, roles; read-only
+npm run admin:recover -- --email <stored-email> --new-email <preferred-email>          # dry run
+npm run admin:recover -- --email <stored-email> --new-email <preferred-email> --apply  # asks for RECOVER and a hidden new password
+```
+
+It updates only the password and (optionally) the email of the existing account, keeps its `_id`, role and data, revokes all its sessions and records an `admin_account_recovered_by_owner` activity entry. It never creates or deletes accounts.
+
 Deployment steps:
 
 1. In cPanel, create the Node.js app with the settings above and add its environment variables.

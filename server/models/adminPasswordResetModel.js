@@ -25,6 +25,9 @@ const safeEqualHex = (a, b) => {
 
 const findMemory = (adminId) => getMemoryStore().adminPasswordResets.find((item) => item.adminId === adminId);
 
+// Each request gets a brand-new challenge with its own _id. The previous challenge is removed first because
+// replacing a document with a different _id is rejected by MongoDB (the cause of a 500 on repeat requests).
+// Returns null if a concurrent request created a challenge first (unique adminId index).
 export const createOrReplaceAdminPasswordReset = async (adminId) => {
   const code = generateAdminResetCode();
   const now = new Date();
@@ -43,8 +46,16 @@ export const createOrReplaceAdminPasswordReset = async (adminId) => {
     const index = challenges.findIndex((item) => item.adminId === adminId);
     if (index === -1) challenges.push(challenge);
     else challenges[index] = challenge;
-  } else {
-    await getCollection(env.adminPasswordResetsCollection).replaceOne({ adminId }, challenge, { upsert: true });
+    return { code, challenge };
+  }
+
+  const collection = getCollection(env.adminPasswordResetsCollection);
+  await collection.deleteOne({ adminId });
+  try {
+    await collection.insertOne(challenge);
+  } catch (error) {
+    if (error?.code === 11000) return null;
+    throw error;
   }
   return { code, challenge };
 };

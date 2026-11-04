@@ -61,7 +61,13 @@ const AdminLogin = () => {
     try {
       const result = await adminLogin(formData);
       if (!result.success) {
-        setErrors({ submit: 'Invalid email or password.' });
+        // Only a genuine 401/400 is "invalid credentials"; rate limits and server faults must not be mislabelled.
+        const submit = result.status === 429
+          ? 'Too many sign-in attempts. Please wait a few minutes and try again.'
+          : result.status >= 500
+            ? 'The sign-in service is temporarily unavailable. Please try again shortly.'
+            : 'Invalid email or password.';
+        setErrors({ submit });
         setLoading(false);
         return;
       }
