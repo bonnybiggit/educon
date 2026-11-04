@@ -1,10 +1,11 @@
 import { ObjectId } from 'mongodb';
 
 export class AppError extends Error {
-  constructor(message, statusCode = 500) {
+  constructor(message, statusCode = 500, errorCode = '') {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = true;
+    this.errorCode = errorCode;
   }
 }
 
@@ -16,8 +17,8 @@ export const sendSuccess = (res, { statusCode = 200, message = 'OK', data = {} }
   res.status(statusCode).json({ success: true, message, data });
 };
 
-export const sendError = (res, { statusCode = 500, message = 'Internal server error' } = {}) => {
-  res.status(statusCode).json({ success: false, message });
+export const sendError = (res, { statusCode = 500, message = 'Internal server error', code = '' } = {}) => {
+  res.status(statusCode).json({ success: false, message, ...(code ? { code } : {}) });
 };
 
 export const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));

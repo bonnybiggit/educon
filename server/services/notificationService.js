@@ -88,6 +88,47 @@ const templates = {
   },
 };
 
+const SAFE_REPLY_TO = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
+
+templates['enquiry.created'] = ({ enquiry, receivedAt }) => {
+  const rows = [
+    ['Name', enquiry.name],
+    ['Email', enquiry.email],
+    ['Phone', enquiry.phone || 'Not provided'],
+    ['Subject', enquiry.subject || 'Not provided'],
+    ['Country', enquiry.country || 'Not provided'],
+    ['Education level', enquiry.level || 'Not provided'],
+    ['Service', enquiry.service || 'Not provided'],
+    ['Message', enquiry.message],
+    ['Received', formatNotificationTime(receivedAt)],
+  ];
+  const ctaUrl = `${siteUrl()}/admin/enquiries`;
+  return {
+    subject: `New Enquiry from ${singleLine(enquiry.name).slice(0, 80)} | Universe Consults`,
+    replyTo: SAFE_REPLY_TO.test(enquiry.email) ? enquiry.email : undefined,
+    html: layout({
+      heading: 'New Website Enquiry',
+      intro: 'A visitor has submitted the contact form on the Universe Consults website. Reply to this email to respond directly.',
+      rows,
+      statusLabel: 'New',
+      statusColor: { bg: '#d1fadf', fg: '#05603a' },
+      ctaUrl,
+      ctaLabel: 'View in Admin Dashboard',
+    }),
+    text: [
+      'New Website Enquiry',
+      BRAND,
+      '',
+      ...rows.filter(([label]) => label !== 'Message').map(([label, value]) => `${label}: ${singleLine(value)}`),
+      '',
+      'Message:',
+      String(enquiry.message ?? ''),
+      '',
+      `View in the admin dashboard (sign-in required): ${ctaUrl}`,
+    ].join('\n'),
+  };
+};
+
 export const buildNotificationEmail = (type, payload) => {
   const template = templates[type];
   if (!template) throw new Error(`Unknown notification type: ${type}`);
@@ -113,6 +154,20 @@ export const notifySupport = async (type, payload, key) => {
     return false;
   }
 };
+
+export const notifyEnquiryCreated = (enquiry) => notifySupport('enquiry.created', {
+  enquiry: {
+    name: enquiry.name,
+    email: enquiry.email,
+    phone: enquiry.phone,
+    subject: enquiry.subject,
+    country: enquiry.country,
+    level: enquiry.level,
+    service: enquiry.service,
+    message: enquiry.message,
+  },
+  receivedAt: enquiry.createdAt instanceof Date ? enquiry.createdAt : new Date(),
+}, `enquiry.created:${enquiry._id}`);
 
 export const notifyStudentRegistered = (student) => notifySupport('student.registered', {
   student: {

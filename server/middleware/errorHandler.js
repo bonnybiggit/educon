@@ -31,5 +31,5 @@ export const errorHandler = (error, _req, res, next) => {
     console.error('Server error:', error);
   }
 
-  sendError(res, { statusCode, message });
+  sendError(res, { statusCode, message, code: statusCode < 500 ? error.errorCode : '' });
 };

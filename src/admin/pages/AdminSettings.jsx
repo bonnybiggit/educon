@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, KeyRound, LogOut, Save, ShieldCheck, UserRound } from 'lucide-react';
-import { adminLogout, getAdminSettings, updateAdminPassword, updateAdminProfile } from '../../services/adminApi';
+import { adminLogout, adminLogoutAll, getAdminSettings, updateAdminPassword, updateAdminProfile } from '../../services/adminApi';
 
 const initialProfile = { name: '', email: '' };
 const initialPasswords = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -41,12 +41,24 @@ const AdminSettings = () => {
 
   const showNotice = (type, message) => setNotice({ type, message });
 
+  const [emailPassword, setEmailPassword] = useState('');
+  const emailChanged = profile.email.trim().toLowerCase() !== (session?.email || '').toLowerCase();
+
   const handleProfileSubmit = async (event) => {
     event.preventDefault();
+    if (emailChanged && !emailPassword) {
+      showNotice('error', 'Enter your current password to change your email.');
+      return;
+    }
     setSavingProfile(true);
     setNotice(null);
     try {
-      const result = await updateAdminProfile(profile);
+      const result = await updateAdminProfile(emailChanged ? { ...profile, currentPassword: emailPassword } : profile);
+      setEmailPassword('');
+      if (result.success && result.data?.reauthenticate) {
+        navigate('/admin/login', { replace: true });
+        return;
+      }
       if (result.success && result.data?.admin) {
         const admin = result.data.admin;
         setProfile({ name: admin.name || '', email: admin.email || '' });
@@ -77,7 +89,8 @@ const AdminSettings = () => {
       const result = await updateAdminPassword(passwords);
       if (result.success) {
         setPasswords(initialPasswords);
-        showNotice('success', 'Password updated successfully.');
+        navigate('/admin/login', { replace: true });
+        return;
       } else {
         showNotice('error', result.message || 'Unable to update password');
       }
@@ -93,6 +106,27 @@ const AdminSettings = () => {
     } finally {
       navigate('/admin/login');
     }
+  };
+
+  const [everywherePassword, setEverywherePassword] = useState('');
+  const [signingOutEverywhere, setSigningOutEverywhere] = useState(false);
+
+  const handleSignOutEverywhere = async (event) => {
+    event.preventDefault();
+    setSigningOutEverywhere(true);
+    setNotice(null);
+    try {
+      const result = await adminLogoutAll(everywherePassword);
+      setEverywherePassword('');
+      if (result.success) {
+        navigate('/admin/login', { replace: true });
+        return;
+      }
+      showNotice('error', result.message || 'Unable to sign out everywhere');
+    } catch {
+      showNotice('error', 'Unable to sign out everywhere');
+    }
+    setSigningOutEverywhere(false);
   };
 
   if (loading) return <div className="flex min-h-64 items-center justify-center text-sm font-medium text-primary-900">Loading settings</div>;
@@ -118,12 +152,18 @@ const AdminSettings = () => {
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <label className="block text-sm font-semibold text-slate-700">Name<input required minLength="2" maxLength="100" className={`${inputClass} mt-1.5`} value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} /></label>
             <label className="block text-sm font-semibold text-slate-700">Email<input required type="email" className={`${inputClass} mt-1.5`} value={profile.email} onChange={(event) => setProfile({ ...profile, email: event.target.value })} /></label>
+            {emailChanged && (
+              <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <p className="text-xs text-amber-900">Changing your email signs you out of every device. You will need to sign in again with the new email.</p>
+                <label className="block text-sm font-semibold text-slate-700">Current password<input type="password" autoComplete="current-password" className={`${inputClass} mt-1.5`} value={emailPassword} onChange={(event) => setEmailPassword(event.target.value)} /></label>
+              </div>
+            )}
             <button type="submit" className={buttonClass} disabled={savingProfile}><Save className="h-4 w-4" />{savingProfile ? 'Saving...' : 'Save profile'}</button>
           </form>
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-          <div className="mb-5 flex items-start gap-3"><div className="rounded-lg bg-primary-50 p-2 text-primary-800"><KeyRound className="h-5 w-5" /></div><div><h2 className="text-lg font-bold text-slate-900">Change Password</h2><p className="text-sm text-slate-500">Use at least 12 characters with upper and lowercase letters and a number.</p></div></div>
+          <div className="mb-5 flex items-start gap-3"><div className="rounded-lg bg-primary-50 p-2 text-primary-800"><KeyRound className="h-5 w-5" /></div><div><h2 className="text-lg font-bold text-slate-900">Change Password</h2><p className="text-sm text-slate-500">Use at least 12 characters with upper and lowercase letters and a number. Changing your password signs you out of every device.</p></div></div>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             {[['currentPassword', 'Current password'], ['newPassword', 'New password'], ['confirmPassword', 'Confirm new password']].map(([field, label]) => (
               <label key={field} className="block text-sm font-semibold text-slate-700">{label}<input required type="password" autoComplete={field === 'currentPassword' ? 'current-password' : 'new-password'} className={`${inputClass} mt-1.5`} value={passwords[field]} onChange={(event) => setPasswords({ ...passwords, [field]: event.target.value })} /></label>
@@ -141,6 +181,13 @@ const AdminSettings = () => {
           <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Account status</p><p className="mt-1 font-medium text-emerald-700">{session?.isActive ? 'Active' : 'Inactive'}</p></div>
         </div>
         <button type="button" onClick={handleSignOut} className="mt-6 inline-flex items-center gap-2 rounded-lg border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"><LogOut className="h-4 w-4" />Sign out</button>
+        <p className="mt-3 text-xs text-slate-500">Sessions last up to 2 hours and end after 30 minutes of inactivity. Signing out only ends this browser's session.</p>
+        <form onSubmit={handleSignOutEverywhere} className="mt-6 max-w-md space-y-3 border-t border-slate-100 pt-5">
+          <p className="text-sm font-semibold text-slate-800">Sign out everywhere</p>
+          <p className="text-xs text-slate-500">Ends every admin session on every device, including this one. Confirm with your password; you will need to sign in again.</p>
+          <input required type="password" autoComplete="current-password" aria-label="Current password" placeholder="Current password" className={inputClass} value={everywherePassword} onChange={(event) => setEverywherePassword(event.target.value)} />
+          <button type="submit" disabled={signingOutEverywhere} className="inline-flex items-center gap-2 rounded-lg border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"><LogOut className="h-4 w-4" />{signingOutEverywhere ? 'Signing out...' : 'Sign out of all devices'}</button>
+        </form>
       </section>
     </div>
   );

@@ -9,6 +9,7 @@ import {
   updateEnquiryById,
 } from '../models/enquiryModel.js';
 import { logActivity } from '../services/activityLogService.js';
+import { notifyEnquiryCreated } from '../services/notificationService.js';
 import { AppError, cleanString, isValidEmail, normalizeEmail, requireFields, sendSuccess } from '../middleware/http.js';
 
 export const createEnquiry = async (req, res) => {
@@ -36,6 +37,7 @@ export const createEnquiry = async (req, res) => {
   };
 
   await insertEnquiry(enquiryDocument);
+  await notifyEnquiryCreated(enquiryDocument);
   sendSuccess(res, {
     statusCode: 201,
     message: 'Enquiry submitted',

@@ -3,6 +3,7 @@ import {
   findAdminByEmail,
   findAdminById,
   sanitizeAdmin,
+  revokeAllAdminSessions,
   updateAdminById,
 } from '../models/adminModel.js';
 import {
@@ -13,6 +14,8 @@ import {
   sendSuccess,
 } from '../middleware/http.js';
 import { logActivity } from '../services/activityLogService.js';
+import { clearAdminAuthCookie } from '../middleware/adminAuth.js';
+import { sendAdminSecurityAlert } from '../services/adminSecurityAlertService.js';
 
 const isStrongPassword = (password) => (
   typeof password === 'string'
@@ -43,17 +46,61 @@ export const updateAdminProfile = async (req, res) => {
     throw new AppError('A valid email is required', 400);
   }
 
+  const current = await findAdminById(req.admin.id);
+  if (!current) throw new AppError('Admin account is unavailable', 404);
+
+  const emailChanged = email !== normalizeEmail(current.email);
+  if (!emailChanged) {
+    const admin = await updateAdminById(req.admin.id, { name });
+    sendSuccess(res, {
+      message: 'Admin profile updated',
+      data: { admin: sanitizeAdmin(admin) },
+    });
+    return;
+  }
+
+  const { currentPassword } = req.body;
+  if (typeof currentPassword !== 'string' || !currentPassword) {
+    throw new AppError('Current password is required to change your email', 400);
+  }
+  if (!(await bcrypt.compare(currentPassword, current.passwordHash))) {
+    await logActivity({
+      adminId: current._id,
+      actorEmail: current.email,
+      action: 'admin_email_change_failure',
+      resource: 'admin',
+      resourceId: current._id,
+      details: { reason: 'incorrect_password' },
+    });
+    throw new AppError('Current password is incorrect', 401);
+  }
+
   const existingAdmin = await findAdminByEmail(email);
   if (existingAdmin && existingAdmin._id.toString() !== req.admin.id) {
     throw new AppError('That email is already in use', 409);
   }
 
-  const admin = await updateAdminById(req.admin.id, { name, email });
+  const previousEmail = current.email;
+  const admin = await revokeAllAdminSessions(req.admin.id, { name, email });
   if (!admin) throw new AppError('Admin account is unavailable', 404);
 
+  await logActivity({
+    adminId: current._id,
+    actorEmail: email,
+    action: 'admin_email_changed',
+    resource: 'admin',
+    resourceId: current._id,
+    details: { previousEmail, newEmail: email },
+  });
+
+  const accountId = String(req.admin.id);
+  void sendAdminSecurityAlert('email_changed_old', { to: previousEmail, accountId, name: current.name, ip: req.ip, newEmail: email });
+  void sendAdminSecurityAlert('email_changed_new', { to: email, accountId, name: admin.name, ip: req.ip, previousEmail });
+
+  clearAdminAuthCookie(res);
   sendSuccess(res, {
-    message: 'Admin profile updated',
-    data: { admin: sanitizeAdmin(admin) },
+    message: 'Email updated. Please sign in again with your new email.',
+    data: { admin: sanitizeAdmin(admin), reauthenticate: true },
   });
 };
 
@@ -75,7 +122,7 @@ export const updateAdminPassword = async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await updateAdminById(req.admin.id, { passwordHash, passwordChangedAt: new Date(), passwordChangeRequired: false });
+  await revokeAllAdminSessions(req.admin.id, { passwordHash, passwordChangedAt: new Date(), passwordChangeRequired: false });
   await logActivity({
     adminId: req.admin.id,
     actorEmail: req.admin.email,
@@ -84,5 +131,11 @@ export const updateAdminPassword = async (req, res) => {
     resourceId: req.admin.id,
   });
 
-  sendSuccess(res, { message: 'Password updated successfully' });
+  void sendAdminSecurityAlert('password_changed', { to: admin.email, accountId: String(req.admin.id), name: admin.name, ip: req.ip });
+
+  clearAdminAuthCookie(res);
+  sendSuccess(res, {
+    message: 'Password updated. Please sign in again with your new password.',
+    data: { reauthenticate: true },
+  });
 };

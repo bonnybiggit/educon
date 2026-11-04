@@ -9,6 +9,21 @@ export const adminLogout = () => apiRequest('/api/admin/logout', {
   method: 'POST',
 });
 
+export const requestAdminPasswordReset = (email) => apiRequest('/api/admin/forgot-password', {
+  method: 'POST',
+  body: JSON.stringify({ email }),
+});
+
+export const confirmAdminPasswordReset = (payload) => apiRequest('/api/admin/reset-password', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+});
+
+export const adminLogoutAll = (password) => apiRequest('/api/admin/logout-all', {
+  method: 'POST',
+  body: JSON.stringify({ password }),
+});
+
 export const getAdminMe = () => apiRequest('/api/admin/me');
 
 export const getAdminSettings = () => apiRequest('/api/admin/settings');

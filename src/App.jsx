@@ -24,6 +24,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms from './pages/Terms'
 import NotFound from './pages/NotFound'
 import AdminLogin from './admin/pages/AdminLogin'
+import AdminForgotPassword from './admin/pages/AdminForgotPassword'
 import AdminDashboard from './admin/pages/AdminDashboard'
 import AdminStudents from './admin/pages/AdminStudents'
 import AdminEnquiries from './admin/pages/AdminEnquiries'
@@ -109,6 +110,7 @@ const AdminContent = () => {
       <Routes>
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
         <Route
           path="/admin/dashboard"
           element={(

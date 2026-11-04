@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { adminLogin, getAdminMe } from '../../services/adminApi';
 
@@ -192,6 +192,11 @@ const AdminLogin = () => {
                     </button>
                   </div>
                   {errors.password && <p id="password-error" className="mt-2 text-sm text-rose-600">{errors.password}</p>}
+                  <div className="mt-2 text-right">
+                    <Link to="/admin/forgot-password" className="text-sm font-semibold text-primary-700 hover:text-primary-900 hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 rounded">
+                      Forgot password?
+                    </Link>
+                  </div>
                 </div>
 
                 <button

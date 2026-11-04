@@ -13,6 +13,8 @@ const memoryStore = {
   activityLogs: [],
   studentEmailVerifications: [],
   studentPasswordResets: [],
+  adminPasswordResets: [],
+  securityCounters: [],
   notificationLog: [],
 };
 
@@ -66,6 +68,8 @@ export const ensureIndexes = async () => {
     db.collection(env.notificationLogCollection).createIndex({ key: 1 }, { unique: true }),
     db.collection(env.notificationLogCollection).createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 90 }),
     db.collection(env.studentPasswordResetsCollection).createIndex({ studentId: 1 }, { unique: true }),
+    db.collection(env.adminPasswordResetsCollection).createIndex({ adminId: 1 }, { unique: true }),
+    db.collection(env.adminPasswordResetsCollection).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     db.collection(env.studentPasswordResetsCollection).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     db.collection(env.studentEmailVerificationsCollection).createIndex({ studentId: 1 }, { unique: true }),
     db.collection(env.studentEmailVerificationsCollection).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),

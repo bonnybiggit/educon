@@ -8,10 +8,12 @@ import {
   findAdminById,
   findAdmins,
   sanitizeAdmin,
+  revokeAllAdminSessions,
   updateAdminById,
   insertAdmin,
 } from '../models/adminModel.js';
 import { logActivity } from '../services/activityLogService.js';
+import { sendAdminSecurityAlert } from '../services/adminSecurityAlertService.js';
 import {
   AppError,
   cleanString,
@@ -138,7 +140,12 @@ export const updateAdminAccount = async (req, res) => {
 
   if (!Object.keys(patch).length) throw new AppError('No valid fields to update', 400);
 
-  const admin = await updateAdminById(req.params.id, patch);
+  // Deactivation and email changes cut off the target's existing sessions so reactivating cannot revive them.
+  const previousEmail = targetAdmin.email;
+  const revokeSessions = patch.isActive === false || (patch.email !== undefined && patch.email !== targetAdmin.email);
+  const admin = revokeSessions
+    ? await revokeAllAdminSessions(req.params.id, patch)
+    : await updateAdminById(req.params.id, patch);
   await logActivity({
     adminId: req.admin.id,
     actorEmail: req.admin.email,
@@ -147,6 +154,12 @@ export const updateAdminAccount = async (req, res) => {
     resourceId: req.params.id,
     details: { changedFields: Object.keys(patch), targetEmail: admin.email },
   });
+
+  if (revokeSessions && patch.email !== undefined && patch.email !== previousEmail) {
+    const accountId = String(req.params.id);
+    void sendAdminSecurityAlert('email_changed_old', { to: previousEmail, accountId, name: targetAdmin.name, ip: req.ip, newEmail: patch.email });
+    void sendAdminSecurityAlert('email_changed_new', { to: patch.email, accountId, name: admin.name, ip: req.ip, previousEmail });
+  }
 
   sendSuccess(res, {
     message: 'Admin account updated',
@@ -164,7 +177,7 @@ export const resetAdminPassword = async (req, res) => {
     throw new AppError('New password must be at least 12 characters and include uppercase, lowercase, and a number', 400);
   }
 
-  await updateAdminById(req.params.id, {
+  await revokeAllAdminSessions(req.params.id, {
     passwordHash: await bcrypt.hash(newPassword, 12),
     passwordChangedAt: new Date(),
     passwordChangeRequired: true,
@@ -177,6 +190,8 @@ export const resetAdminPassword = async (req, res) => {
     resourceId: req.params.id,
     details: { targetEmail: targetAdmin.email },
   });
+
+  void sendAdminSecurityAlert('password_reset', { to: targetAdmin.email, accountId: String(req.params.id), name: targetAdmin.name, ip: req.ip });
 
   sendSuccess(res, { message: 'Admin password reset successfully' });
 };

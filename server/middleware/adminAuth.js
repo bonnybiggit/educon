@@ -1,7 +1,15 @@
 import crypto from 'crypto';
 import { env, isProduction } from '../config/env.js';
 import { logActivity } from '../services/activityLogService.js';
-import { ADMIN_ROLE, findAdminById, normalizeAdminRole, sanitizeAdmin } from '../models/adminModel.js';
+import {
+  ADMIN_ROLE,
+  addAdminSession,
+  findAdminById,
+  normalizeAdminRole,
+  removeAdminSession,
+  sanitizeAdmin,
+  touchAdminSession,
+} from '../models/adminModel.js';
 import { AppError, asyncHandler } from './http.js';
 
 const base64UrlEncode = (value) => Buffer
@@ -24,7 +32,7 @@ const getAdminCookieOptions = () => ({
   httpOnly: true,
   secure: isProduction,
   sameSite: 'lax',
-  maxAge: env.jwtExpiresInSeconds * 1000,
+  maxAge: env.adminSessionTtlSeconds * 1000,
   path: '/',
 });
 
@@ -75,7 +83,14 @@ const requireTrustedOrigin = (req) => {
   }
 };
 
-export const createAdminToken = (admin) => {
+export const SESSION_INVALID_CODE = 'ADMIN_SESSION_INVALID';
+const sessionInvalid = (message, statusCode = 401) => new AppError(message, statusCode, SESSION_INVALID_CODE);
+
+const CLOCK_SKEW_SECONDS = 30;
+const SESSION_TOUCH_INTERVAL_MS = 60 * 1000;
+
+// Tokens carrying a `jti` are tracked server-side; tokens without one are only produced by tests and pre-upgrade logins.
+export const createAdminToken = (admin, { jti } = {}) => {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'HS256', typ: 'JWT' };
   const payload = {
@@ -83,11 +98,26 @@ export const createAdminToken = (admin) => {
     email: admin.email,
     role: admin.role,
     type: 'admin',
+    // Bumped on the account to revoke every previously issued token; accounts without it count as 0.
+    sv: Number(admin.sessionVersion) || 0,
+    ...(jti ? { jti } : {}),
     iat: now,
-    exp: now + env.jwtExpiresInSeconds,
+    exp: now + (jti ? env.adminSessionTtlSeconds : env.jwtExpiresInSeconds),
   };
   const content = `${base64UrlEncode(header)}.${base64UrlEncode(payload)}`;
   return `${content}.${sign(content)}`;
+};
+
+export const issueAdminSession = async (admin) => {
+  const jti = crypto.randomUUID();
+  const now = Date.now();
+  await addAdminSession(admin._id, {
+    jti,
+    createdAt: new Date(now),
+    lastSeenAt: new Date(now),
+    expiresAt: new Date(now + env.adminSessionTtlSeconds * 1000),
+  });
+  return createAdminToken(admin, { jti });
 };
 
 export const setAdminAuthCookie = (res, token) => {
@@ -103,40 +133,57 @@ export const clearAdminAuthCookie = (res) => {
 
 export const verifyAdminToken = (token) => {
   if (!token || typeof token !== 'string') {
-    throw new AppError('Authentication required', 401);
+    throw sessionInvalid('Authentication required');
   }
 
   const parts = token.split('.');
   if (parts.length !== 3) {
-    throw new AppError('Invalid authentication token', 401);
+    throw sessionInvalid('Invalid authentication token');
   }
 
   const [encodedHeader, encodedPayload, signature] = parts;
+  let header;
+  let payload;
+  try {
+    header = JSON.parse(Buffer.from(encodedHeader, 'base64url').toString('utf8'));
+    payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
+  } catch {
+    throw sessionInvalid('Invalid authentication token');
+  }
+
+  // Only the exact algorithm we issue is accepted (no "none", no algorithm switching).
+  if (!header || header.alg !== 'HS256' || header.typ !== 'JWT' || !payload || typeof payload !== 'object') {
+    throw sessionInvalid('Invalid authentication token');
+  }
+
   const content = `${encodedHeader}.${encodedPayload}`;
-  const expectedSignature = sign(content);
   const signatureBuffer = Buffer.from(signature);
-  const expectedSignatureBuffer = Buffer.from(expectedSignature);
+  const expectedSignatureBuffer = Buffer.from(sign(content));
 
   if (
     signatureBuffer.length !== expectedSignatureBuffer.length ||
     !crypto.timingSafeEqual(signatureBuffer, expectedSignatureBuffer)
   ) {
-    throw new AppError('Invalid authentication token', 401);
+    throw sessionInvalid('Invalid authentication token');
   }
 
-  let payload;
-  try {
-    payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
-  } catch {
-    throw new AppError('Invalid authentication token', 401);
+  if (payload.type !== 'admin' || typeof payload.sub !== 'string' || !/^[a-f0-9]{24}$/i.test(payload.sub)) {
+    throw sessionInvalid('Invalid authentication token');
   }
 
-  if (payload.type !== 'admin' || !payload.sub) {
-    throw new AppError('Invalid authentication token', 401);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (!Number.isInteger(payload.iat) || !Number.isInteger(payload.exp) || payload.exp <= payload.iat) {
+    throw sessionInvalid('Invalid authentication token');
   }
-
-  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-    throw new AppError('Authentication token expired', 401);
+  if (payload.iat > nowSeconds + CLOCK_SKEW_SECONDS) {
+    throw sessionInvalid('Invalid authentication token');
+  }
+  if (payload.exp <= nowSeconds) {
+    throw sessionInvalid('Authentication token expired');
+  }
+  if (payload.jti !== undefined && (typeof payload.jti !== 'string' || !payload.jti
+    || payload.exp - payload.iat > env.adminSessionTtlSeconds + CLOCK_SKEW_SECONDS)) {
+    throw sessionInvalid('Invalid authentication token');
   }
 
   return payload;
@@ -144,15 +191,43 @@ export const verifyAdminToken = (token) => {
 
 export const requireAdmin = asyncHandler(async (req, _res, next) => {
   requireTrustedOrigin(req);
-  const payload = verifyAdminToken(getCookieToken(req) || getBearerToken(req));
+  const payload = verifyAdminToken(getCookieToken(req) || (env.adminAllowBearer ? getBearerToken(req) : ''));
   const admin = await findAdminById(payload.sub);
 
   if (!admin || !admin.isActive) {
-    throw new AppError('Admin account is inactive or unavailable', 403);
+    throw sessionInvalid('Admin account is inactive or unavailable', 403);
   }
 
-  if (admin.passwordChangedAt && payload.iat && new Date(admin.passwordChangedAt).getTime() >= payload.iat * 1000) {
-    throw new AppError('Authentication token is no longer valid', 401);
+  if ((Number(payload.sv) || 0) !== (Number(admin.sessionVersion) || 0)) {
+    throw sessionInvalid('Authentication token is no longer valid');
+  }
+
+  // Compared in whole seconds like `iat`, so a sign-in in the same second as a password change is not rejected.
+  if (admin.passwordChangedAt && Math.floor(new Date(admin.passwordChangedAt).getTime() / 1000) > payload.iat) {
+    throw sessionInvalid('Authentication token is no longer valid');
+  }
+
+  if (payload.jti) {
+    const now = Date.now();
+    const session = (admin.sessions || []).find((item) => item.jti === payload.jti);
+    if (!session || new Date(session.expiresAt).getTime() <= now) {
+      throw sessionInvalid('Authentication token is no longer valid');
+    }
+    const lastSeen = new Date(session.lastSeenAt).getTime();
+    if (now - lastSeen > env.adminIdleTimeoutSeconds * 1000) {
+      await removeAdminSession(admin._id, payload.jti);
+      throw sessionInvalid('Session expired due to inactivity');
+    }
+    if (now - lastSeen > SESSION_TOUCH_INTERVAL_MS && !(await touchAdminSession(admin._id, payload.jti))) {
+      throw sessionInvalid('Authentication token is no longer valid');
+    }
+    req.adminSession = { jti: payload.jti };
+  } else if (
+    !env.adminLegacyTokenCompat
+    || Date.now() > env.adminLegacyTokenDeadlineMs
+    || payload.iat * 1000 > env.adminLegacyTokenDeadlineMs
+  ) {
+    throw sessionInvalid('Please sign in again');
   }
 
   req.admin = sanitizeAdmin(admin);

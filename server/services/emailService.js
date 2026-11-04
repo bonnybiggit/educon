@@ -114,16 +114,23 @@ export const isNotificationEmailConfigured = () => Boolean(
 );
 
 // Generic transactional send used by staff notifications; callers decide how to handle failure.
-export const sendEmail = async ({ to, subject, html, text }) => {
+export const sendEmail = async ({ to, subject, html, text, replyTo }) => {
   if (notificationEmailSender) {
-    await notificationEmailSender({ to, subject, html, text });
+    await notificationEmailSender({ to, subject, html, text, replyTo });
     return;
   }
   if (!isNotificationEmailConfigured()) {
     throw new AppError('Email service is not configured', 503);
   }
   const resend = new Resend(env.resendApiKey);
-  const { error } = await resend.emails.send({ from: env.emailFrom, to: [to], subject, html, text });
+  const { error } = await resend.emails.send({
+    from: env.emailFrom,
+    to: [to],
+    subject,
+    html,
+    text,
+    ...(replyTo ? { replyTo } : {}),
+  });
   if (error) {
     console.error('Resend email delivery failed:', {
       name: error.name,

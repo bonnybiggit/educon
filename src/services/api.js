@@ -36,6 +36,17 @@ export const apiRequest = async (path, options = {}) => {
   }));
 
   if (!response.ok) {
+    // Admin session loss (expired, revoked, signed out elsewhere) sends the browser to admin login.
+    // Keyed on the server's session code so wrong-password 401s and student pages are never redirected.
+    if (
+      result.code === 'ADMIN_SESSION_INVALID'
+      && path.startsWith('/api/admin')
+      && path !== '/api/admin/me'
+      && typeof window !== 'undefined'
+      && !window.location.pathname.startsWith('/admin/login')
+    ) {
+      window.location.assign('/admin/login');
+    }
     return {
       success: false,
       message: result.message || result.error || 'Request failed',
