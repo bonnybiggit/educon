@@ -26,6 +26,8 @@
     "smoke:admin-security-alerts": "node server/admin-security-alerts-smoke-test.mjs",
     "smoke:admin-recovery": "node server/admin-recovery-smoke-test.mjs",
     "admin:recover": "node server/scripts/admin-recover.mjs",
+    "admin:promote": "node server/scripts/admin-promote.mjs",
+    "smoke:admin-promotion": "node server/admin-promotion-smoke-test.mjs",
     "smoke:enquiry-notification": "node server/enquiry-notification-smoke-test.mjs",
     "smoke:student-profile": "node server/student-profile-smoke-test.mjs",
     "smoke:student-submission": "node server/student-submission-smoke-test.mjs",
