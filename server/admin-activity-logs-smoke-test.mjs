@@ -182,4 +182,15 @@ assert.ok(store.activityLogs.includes(legacy));
 await logActivity({ adminId: 'x', action: 'admin_login', resource: 'admin' });
 assert.equal(formatActivityLogResponse(store.activityLogs[0]).protected, false);
 
+// Regression: a hidden record with a missing/invalid purgeAt must format without throwing (RangeError => 500).
+for (const purgeAt of [undefined, null, 'not-a-date']) {
+  const view = formatActivityLogResponse({ ...mk('admin_login'), hiddenAt: new Date(), purgeAt });
+  assert.equal(view.purgeAt, null);
+  assert.equal(view.daysRemaining, 0);
+  assert.ok(view.hiddenAt);
+}
+// Regression: a valid hidden record still reports the 90-day window.
+const okView = formatActivityLogResponse({ ...mk('admin_login'), hiddenAt: new Date(), purgeAt: new Date(Date.now() + 90 * DAY) });
+assert.equal(okView.daysRemaining, 90);
+
 console.log('Activity log retention smoke tests passed');

@@ -64,6 +64,23 @@ export const findActivityLogs = async ({ limit = 100 } = {}) => {
   return getCollection(env.activityLogsCollection).find({ hiddenAt: null }).sort({ createdAt: -1 }).limit(safeLimit).toArray();
 };
 
+const toIso = (value) => {
+  if (value === null || value === undefined) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+// toISOString() throws RangeError on an invalid date, which would turn a bad stored value into a 500.
+const hiddenFields = (activity) => {
+  const purge = activity.purgeAt === null || activity.purgeAt === undefined ? NaN : new Date(activity.purgeAt).getTime();
+  return {
+    hiddenAt: toIso(activity.hiddenAt),
+    purgeAt: toIso(activity.purgeAt),
+    daysRemaining: Number.isNaN(purge) ? 0 : Math.max(0, Math.ceil((purge - Date.now()) / (24 * 60 * 60 * 1000))),
+    hiddenByEmail: activity.hiddenByEmail || '',
+  };
+};
+
 export const formatActivityLogResponse = (activity) => ({
   id: activity._id.toString(),
   adminId: activity.adminId || '',
@@ -74,10 +91,5 @@ export const formatActivityLogResponse = (activity) => ({
   details: activity.details || {},
   createdAt: activity.createdAt?.toISOString ? activity.createdAt.toISOString() : activity.createdAt,
   protected: isProtectedActivityAction(activity.action),
-  ...(activity.hiddenAt ? {
-    hiddenAt: new Date(activity.hiddenAt).toISOString(),
-    purgeAt: new Date(activity.purgeAt).toISOString(),
-    daysRemaining: Math.max(0, Math.ceil((new Date(activity.purgeAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000))),
-    hiddenByEmail: activity.hiddenByEmail || '',
-  } : {}),
+  ...(activity.hiddenAt ? hiddenFields(activity) : {}),
 });
