@@ -1,12 +1,12 @@
-import { ObjectId } from 'mongodb';
+﻿import { ObjectId } from 'mongodb';
 import {
-  deleteServiceById,
   findServiceById,
   findServices,
   formatServiceResponse,
   insertService,
   updateServiceById,
 } from '../models/serviceModel.js';
+import { moveToTrash } from '../services/trashService.js';
 import { logActivity } from '../services/activityLogService.js';
 import { AppError, cleanString, sendSuccess } from '../middleware/http.js';
 
@@ -47,7 +47,7 @@ export const createAdminService = async (req, res) => {
     updatedAt: now,
   };
   await insertService(service);
-  await logActivity({ adminId: req.admin.id, action: 'service_creation', resource: 'service', resourceId: service._id, details: { name: service.name } });
+  await logActivity({ adminId: req.admin.id, actorEmail: req.admin.email, action: 'service_creation', resource: 'service', resourceId: service._id, details: { name: service.name } });
   sendSuccess(res, { statusCode: 201, message: 'Service created', data: { service: formatServiceResponse(service) } });
 };
 
@@ -57,16 +57,16 @@ export const updateAdminService = async (req, res) => {
   if (!Object.keys(patch).length) throw new AppError('No valid fields to update', 400);
   const service = await updateServiceById(req.params.id, patch);
   if (!service) throw new AppError('Service not found', 404);
-  await logActivity({ adminId: req.admin.id, action: 'service_update', resource: 'service', resourceId: req.params.id, details: patch });
+  await logActivity({ adminId: req.admin.id, actorEmail: req.admin.email, action: 'service_update', resource: 'service', resourceId: req.params.id, details: patch });
   sendSuccess(res, { message: 'Service updated', data: { service: formatServiceResponse(service) } });
 };
 
 export const deleteAdminService = async (req, res) => {
   validateServiceId(req.params.id);
-  const service = await deleteServiceById(req.params.id);
-  if (!service) throw new AppError('Service not found', 404);
-  await logActivity({ adminId: req.admin.id, action: 'service_deletion', resource: 'service', resourceId: req.params.id, details: { name: service.name } });
-  sendSuccess(res, { message: 'Service deleted' });
+  const moved = await moveToTrash({ type: 'service', id: req.params.id, admin: req.admin });
+  if (!moved) throw new AppError('Service not found', 404);
+  await logActivity({ adminId: req.admin.id, actorEmail: req.admin.email, action: 'service_deletion', resource: 'service', resourceId: req.params.id, details: { name: moved.doc.name, movedToTrash: true, trashId: moved.entry._id.toString() } });
+  sendSuccess(res, { message: 'Service moved to Trash' });
 };
 
 export const getAdminService = async (req, res) => {

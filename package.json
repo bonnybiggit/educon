@@ -28,6 +28,8 @@
     "admin:recover": "node server/scripts/admin-recover.mjs",
     "admin:promote": "node server/scripts/admin-promote.mjs",
     "smoke:admin-promotion": "node server/admin-promotion-smoke-test.mjs",
+    "smoke:trash": "node server/admin-trash-smoke-test.mjs",
+    "smoke:activity-logs": "node server/admin-activity-logs-smoke-test.mjs",
     "smoke:enquiry-notification": "node server/enquiry-notification-smoke-test.mjs",
     "smoke:student-profile": "node server/student-profile-smoke-test.mjs",
     "smoke:student-submission": "node server/student-submission-smoke-test.mjs",

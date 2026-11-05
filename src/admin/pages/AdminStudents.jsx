@@ -1,17 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
   Clock,
   Eye,
+Trash2,
   RefreshCcw,
   Search,
   UserRoundCheck,
   Users,
   X,
 } from 'lucide-react';
-import { fetchAdminStudentDocument, getAdminStudents, updateAdminStudent } from '../../services/adminApi';
+import { deleteAdminStudent, fetchAdminStudentDocument, getAdminStudents, updateAdminStudent } from '../../services/adminApi';
+import { canManageStudentDeletion } from '../permissions';
 import { APPLICATION_STAGE_VALUES, getApplicationStageLabel } from '../../data/applicationStages';
 
 const fallbackStages = APPLICATION_STAGE_VALUES;
@@ -76,7 +78,8 @@ const StatusBadge = ({ status }) => (
   </span>
 );
 
-const AdminStudents = () => {
+const AdminStudents = ({ admin }) => {
+  const canDelete = canManageStudentDeletion(admin);
   const [students, setStudents] = useState([]);
   const [summary, setSummary] = useState({ total: 0, pending: 0, review: 0, approved: 0 });
   const [availableFilters, setAvailableFilters] = useState({
@@ -231,6 +234,17 @@ const AdminStudents = () => {
     } finally {
       setSavingId(null);
     }
+  };
+
+  const handleDelete = async (student) => {
+    if (!window.confirm(`Move ${student.fullName || student.email} to Trash? Their account will stop working until restored, and is permanently deleted after 30 days.`)) return;
+    setSavingId(student.id);
+    setError('');
+    const result = await deleteAdminStudent(student.id);
+    if (!result.success) setError(result.message || 'Unable to delete student.');
+    setSelectedStudent((current) => (current?.id === student.id && result.success ? null : current));
+    await fetchStudents();
+    setSavingId(null);
   };
 
   const emptyMessage = hasActiveFilter
@@ -394,6 +408,12 @@ const AdminStudents = () => {
                           <Eye className="h-4 w-4" aria-hidden="true" />
                           View
                         </button>
+                        {canDelete && (
+                          <button type="button" disabled={savingId === student.id} onClick={() => handleDelete(student)} className="ml-2 inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-50">
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -433,6 +453,12 @@ const AdminStudents = () => {
                     <Eye className="h-4 w-4" aria-hidden="true" />
                     View Details
                   </button>
+                  {canDelete && (
+                    <button type="button" disabled={savingId === student.id} onClick={() => handleDelete(student)} className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50">
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      Delete
+                    </button>
+                  )}
                 </article>
               ))}
             </div>

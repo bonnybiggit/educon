@@ -51,6 +51,38 @@ export const resetAdminPassword = (id, password) => apiRequest(`/api/admin/admin
 
 export const getActivityLogs = () => apiRequest('/api/admin/activity-logs');
 
+export const getHiddenActivityLogs = () => apiRequest('/api/admin/activity-logs/hidden');
+
+export const hideActivityLogs = (ids) => apiRequest('/api/admin/activity-logs/hide', {
+  method: 'POST',
+  body: JSON.stringify({ ids }),
+});
+
+export const restoreActivityLogs = (ids) => apiRequest('/api/admin/activity-logs/restore', {
+  method: 'POST',
+  body: JSON.stringify({ ids }),
+});
+
+export const getTrash = (params = {}) => {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') searchParams.set(key, value);
+  });
+  const query = searchParams.toString();
+  return apiRequest(`/api/admin/trash${query ? `?${query}` : ''}`);
+};
+
+export const restoreTrashItem = (id) => apiRequest(`/api/admin/trash/${id}/restore`, { method: 'POST' });
+
+export const deleteTrashItemPermanently = (id) => apiRequest(`/api/admin/trash/${id}`, { method: 'DELETE' });
+
+export const emptyTrash = () => apiRequest('/api/admin/trash/empty', {
+  method: 'POST',
+  body: JSON.stringify({ confirm: 'EMPTY TRASH' }),
+});
+
+export const deleteAdminStudent = (id) => apiRequest(`/api/admin/students/${id}`, { method: 'DELETE' });
+
 export const updateAdminProfile = (profile) => apiRequest('/api/admin/profile', {
   method: 'PATCH',
   body: JSON.stringify(profile),

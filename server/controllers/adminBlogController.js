@@ -1,6 +1,5 @@
-import { ObjectId } from 'mongodb';
+﻿import { ObjectId } from 'mongodb';
 import {
-  deleteBlogPostById,
   findBlogPostById,
   findBlogPostBySlug,
   findBlogPosts,
@@ -8,6 +7,7 @@ import {
   insertBlogPost,
   updateBlogPostById,
 } from '../models/blogModel.js';
+import { moveToTrash } from '../services/trashService.js';
 import { logActivity } from '../services/activityLogService.js';
 import { AppError, cleanString, sendSuccess } from '../middleware/http.js';
 
@@ -100,6 +100,7 @@ export const createAdminBlogPost = async (req, res) => {
   await insertBlogPost(post);
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'blog_post_creation',
     resource: 'blogPost',
     resourceId: post._id,
@@ -120,6 +121,7 @@ export const updateAdminBlogPost = async (req, res) => {
   if (!post) throw new AppError('Blog post not found', 404);
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'blog_post_update',
     resource: 'blogPost',
     resourceId: req.params.id,
@@ -133,14 +135,16 @@ export const updateAdminBlogPost = async (req, res) => {
 
 export const deleteAdminBlogPost = async (req, res) => {
   validateBlogPostId(req.params.id);
-  const post = await deleteBlogPostById(req.params.id);
-  if (!post) throw new AppError('Blog post not found', 404);
+  const moved = await moveToTrash({ type: 'blog', id: req.params.id, admin: req.admin });
+  if (!moved) throw new AppError('Blog post not found', 404);
+  const post = moved.doc;
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'blog_post_deletion',
     resource: 'blogPost',
     resourceId: req.params.id,
-    details: { title: post.title, slug: post.slug },
+    details: { title: post.title, slug: post.slug, movedToTrash: true, trashId: moved.entry._id.toString() },
   });
-  sendSuccess(res, { message: 'Blog post deleted' });
+  sendSuccess(res, { message: 'Blog post moved to Trash' });
 };

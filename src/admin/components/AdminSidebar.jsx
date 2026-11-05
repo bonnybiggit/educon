@@ -9,7 +9,8 @@ import {
   Settings,
   LogOut,
   ShieldCheck,
-  ClipboardList
+  ClipboardList,
+  Trash2
 } from 'lucide-react';
 import { adminLogout } from '../../services/adminApi';
 import { canManageAdmins, canManageEnquiries, canManageServices, canViewActivityLogs } from '../permissions';
@@ -21,6 +22,7 @@ const navigationItems = [
   { name: 'Services', href: '/admin/services', icon: Briefcase, canView: canManageServices },
   { name: 'Testimonials', href: '/admin/testimonials', icon: MessageSquare },
   { name: 'Blog', href: '/admin/blog', icon: FileText },
+  { name: 'Trash', href: '/admin/trash', icon: Trash2 },
   { name: 'Admin Management', href: '/admin/admins', icon: ShieldCheck, canView: canManageAdmins },
   { name: 'Activity Logs', href: '/admin/activity-logs', icon: ClipboardList, canView: canViewActivityLogs },
   { name: 'Settings', href: '/admin/settings', icon: Settings },

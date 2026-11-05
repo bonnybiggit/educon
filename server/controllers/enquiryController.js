@@ -1,6 +1,5 @@
-import { ObjectId } from 'mongodb';
+﻿import { ObjectId } from 'mongodb';
 import {
-  deleteEnquiryById,
   ENQUIRY_STATUSES,
   findEnquiries,
   findEnquiryById,
@@ -8,6 +7,7 @@ import {
   insertEnquiry,
   updateEnquiryById,
 } from '../models/enquiryModel.js';
+import { moveToTrash } from '../services/trashService.js';
 import { logActivity } from '../services/activityLogService.js';
 import { notifyEnquiryCreated } from '../services/notificationService.js';
 import { AppError, cleanString, isValidEmail, normalizeEmail, requireFields, sendSuccess } from '../middleware/http.js';
@@ -96,6 +96,7 @@ export const updateAdminEnquiry = async (req, res) => {
 
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'enquiry_status_update',
     resource: 'enquiry',
     resourceId: id,
@@ -114,18 +115,20 @@ export const deleteAdminEnquiry = async (req, res) => {
     throw new AppError('Invalid enquiry id', 400);
   }
 
-  const enquiry = await deleteEnquiryById(id);
-  if (!enquiry) {
+  const moved = await moveToTrash({ type: 'enquiry', id, admin: req.admin });
+  if (!moved) {
     throw new AppError('Enquiry not found', 404);
   }
+  const enquiry = moved.doc;
 
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'enquiry_deletion',
     resource: 'enquiry',
     resourceId: id,
-    details: { email: enquiry.email, status: enquiry.status },
+    details: { email: enquiry.email, status: enquiry.status, movedToTrash: true, trashId: moved.entry._id.toString() },
   });
 
-  sendSuccess(res, { message: 'Enquiry deleted' });
+  sendSuccess(res, { message: 'Enquiry moved to Trash' });
 };

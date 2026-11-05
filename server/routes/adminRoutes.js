@@ -1,10 +1,10 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { adminLogin, adminLogout, adminLogoutAll, getAdminMe } from '../controllers/adminAuthController.js';
 import { deleteAdminAccount, createAdmin, getAdmins, resetAdminPassword, updateAdminAccount } from '../controllers/adminManagementController.js';
-import { getActivityLogs } from '../controllers/adminActivityController.js';
+import { getActivityLogs, getHiddenActivityLogs, hideSelectedActivityLogs, restoreSelectedActivityLogs } from '../controllers/adminActivityController.js';
 import { createAdminBlogPost, deleteAdminBlogPost, getAdminBlogPost, getAdminBlogPosts, updateAdminBlogPost } from '../controllers/adminBlogController.js';
 import { createAdminTestimonial, deleteAdminTestimonial, getAdminTestimonial, getAdminTestimonials, updateAdminTestimonial } from '../controllers/adminTestimonialController.js';
-import { getAdminStudentDocument, getAdminStudents, updateAdminStudent } from '../controllers/adminStudentController.js';
+import { deleteAdminStudent, getAdminStudentDocument, getAdminStudents, updateAdminStudent } from '../controllers/adminStudentController.js';
 import { getAdminDashboardData } from '../controllers/adminDashboardController.js';
 import { getAdminSettings, updateAdminPassword, updateAdminProfile } from '../controllers/adminSettingsController.js';
 import { createAdminService, deleteAdminService, getAdminService, getAdminServices, updateAdminService } from '../controllers/adminServiceController.js';
@@ -14,6 +14,7 @@ import {
   getAdminEnquiry,
   updateAdminEnquiry,
 } from '../controllers/enquiryController.js';
+import { deleteTrashItemPermanently, emptyTrashBin, getTrash, restoreTrashItem } from '../controllers/trashController.js';
 import { requireAdmin, requireRole, requireSuperAdmin } from '../middleware/adminAuth.js';
 import { asyncHandler } from '../middleware/http.js';
 import { adminLoginLimiter, adminProfileLimiter, adminRecoveryConfirmLimiter, adminRecoveryRequestLimiter, adminSessionLimiter } from '../middleware/rateLimit.js';
@@ -39,10 +40,14 @@ router.patch('/admins/:id', requireAdmin, requireSuperAdmin, asyncHandler(update
 router.delete('/admins/:id', requireAdmin, requireSuperAdmin, asyncHandler(deleteAdminAccount));
 router.post('/admins/:id/reset-password', requireAdmin, requireSuperAdmin, asyncHandler(resetAdminPassword));
 router.get('/activity-logs', requireAdmin, requireSuperAdmin, asyncHandler(getActivityLogs));
+router.get('/activity-logs/hidden', requireAdmin, requireSuperAdmin, asyncHandler(getHiddenActivityLogs));
+router.post('/activity-logs/hide', requireAdmin, requireSuperAdmin, asyncHandler(hideSelectedActivityLogs));
+router.post('/activity-logs/restore', requireAdmin, requireSuperAdmin, asyncHandler(restoreSelectedActivityLogs));
 
 router.get('/students', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(getAdminStudents));
 router.get('/students/:id/documents/:field', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(getAdminStudentDocument));
 router.patch('/students/:id', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(updateAdminStudent));
+router.delete('/students/:id', requireAdmin, requireSuperAdmin, asyncHandler(deleteAdminStudent));
 
 router.get('/enquiries', requireAdmin, requireSuperAdmin, asyncHandler(getAdminEnquiries));
 router.get('/enquiries/:id', requireAdmin, requireSuperAdmin, asyncHandler(getAdminEnquiry));
@@ -66,5 +71,10 @@ router.get('/blog/:id', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.S
 router.post('/blog', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(createAdminBlogPost));
 router.patch('/blog/:id', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(updateAdminBlogPost));
 router.delete('/blog/:id', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(deleteAdminBlogPost));
+
+router.get('/trash', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(getTrash));
+router.post('/trash/empty', requireAdmin, requireSuperAdmin, asyncHandler(emptyTrashBin));
+router.post('/trash/:id/restore', requireAdmin, requireRole(ADMIN_ROLE.ADMIN, ADMIN_ROLE.SUPER_ADMIN), asyncHandler(restoreTrashItem));
+router.delete('/trash/:id', requireAdmin, requireSuperAdmin, asyncHandler(deleteTrashItemPermanently));
 
 export default router;

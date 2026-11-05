@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, Clock3, Eye, Inbox, Mail, RefreshCcw, Search, Trash2, X } from 'lucide-react';
 import { deleteAdminEnquiry, getAdminEnquiries, getAdminEnquiry, updateAdminEnquiry } from '../../services/adminApi';
 
@@ -61,7 +61,7 @@ const AdminEnquiries = () => {
     } catch { setError(true); } finally { setSavingId(null); }
   };
   const removeEnquiry = async (enquiry) => {
-    if (!window.confirm(`Delete the enquiry from ${enquiry.name || 'this contact'}?`)) return;
+    if (!window.confirm(`Move the enquiry from ${enquiry.name || 'this contact'} to Trash? You can restore it for 30 days.`)) return;
     setDeletingId(enquiry.id);
     try {
       const result = await deleteAdminEnquiry(enquiry.id);

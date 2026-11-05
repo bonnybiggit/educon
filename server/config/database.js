@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+﻿import { MongoClient } from 'mongodb';
 import { env, isMemoryStoreAllowed } from './env.js';
 
 const memoryStore = {
@@ -16,6 +16,7 @@ const memoryStore = {
   adminPasswordResets: [],
   securityCounters: [],
   notificationLog: [],
+  trash: [],
 };
 
 let client;
@@ -65,6 +66,7 @@ export const ensureIndexes = async () => {
     db.collection(env.blogCollection).createIndex({ isPublished: 1, updatedAt: -1 }),
     db.collection(env.activityLogsCollection).createIndex({ adminId: 1, createdAt: -1 }),
     db.collection(env.activityLogsCollection).createIndex({ resource: 1, resourceId: 1 }),
+    db.collection(env.activityLogsCollection).createIndex({ hiddenAt: 1, purgeAt: 1 }, { sparse: true }),
     db.collection(env.notificationLogCollection).createIndex({ key: 1 }, { unique: true }),
     db.collection(env.notificationLogCollection).createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 90 }),
     db.collection(env.studentPasswordResetsCollection).createIndex({ studentId: 1 }, { unique: true }),
@@ -73,6 +75,9 @@ export const ensureIndexes = async () => {
     db.collection(env.studentPasswordResetsCollection).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     db.collection(env.studentEmailVerificationsCollection).createIndex({ studentId: 1 }, { unique: true }),
     db.collection(env.studentEmailVerificationsCollection).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    db.collection(env.trashCollection).createIndex({ type: 1, originalId: 1 }, { unique: true }),
+    db.collection(env.trashCollection).createIndex({ purgeAt: 1 }),
+    db.collection(env.trashCollection).createIndex({ deletedAt: -1 }),
   ]);
 };
 

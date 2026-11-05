@@ -1,12 +1,12 @@
-import { ObjectId } from 'mongodb';
+﻿import { ObjectId } from 'mongodb';
 import {
-  deleteTestimonialById,
   findTestimonialById,
   findTestimonials,
   formatTestimonialResponse,
   insertTestimonial,
   updateTestimonialById,
 } from '../models/testimonialModel.js';
+import { moveToTrash } from '../services/trashService.js';
 import { logActivity } from '../services/activityLogService.js';
 import { AppError, cleanString, sendSuccess } from '../middleware/http.js';
 
@@ -68,6 +68,7 @@ export const createAdminTestimonial = async (req, res) => {
   await insertTestimonial(testimonial);
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'testimonial_creation',
     resource: 'testimonial',
     resourceId: testimonial._id,
@@ -88,6 +89,7 @@ export const updateAdminTestimonial = async (req, res) => {
   if (!testimonial) throw new AppError('Testimonial not found', 404);
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'testimonial_update',
     resource: 'testimonial',
     resourceId: req.params.id,
@@ -101,14 +103,15 @@ export const updateAdminTestimonial = async (req, res) => {
 
 export const deleteAdminTestimonial = async (req, res) => {
   validateTestimonialId(req.params.id);
-  const testimonial = await deleteTestimonialById(req.params.id);
-  if (!testimonial) throw new AppError('Testimonial not found', 404);
+  const moved = await moveToTrash({ type: 'testimonial', id: req.params.id, admin: req.admin });
+  if (!moved) throw new AppError('Testimonial not found', 404);
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'testimonial_deletion',
     resource: 'testimonial',
     resourceId: req.params.id,
-    details: { name: testimonial.name },
+    details: { name: moved.doc.name, movedToTrash: true, trashId: moved.entry._id.toString() },
   });
-  sendSuccess(res, { message: 'Testimonial deleted' });
+  sendSuccess(res, { message: 'Testimonial moved to Trash' });
 };

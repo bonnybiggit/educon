@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { BriefcaseBusiness, Eye, EyeOff, Plus, RefreshCcw, Search, Trash2, X } from 'lucide-react';
 import { createAdminService, deleteAdminService, getAdminServices, updateAdminService } from '../../services/adminApi';
 
@@ -60,7 +60,7 @@ const AdminServices = () => {
     }
   };
   const removeService = async (service) => {
-    if (!window.confirm(`Delete the service "${service.name}"?`)) return;
+    if (!window.confirm(`Move the service "${service.name}" to Trash? You can restore it for 30 days.`)) return;
     setDeletingId(service.id);
     try {
       const result = await deleteAdminService(service.id);

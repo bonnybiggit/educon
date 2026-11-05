@@ -18,3 +18,7 @@ export const canManageServices = isSuperAdmin;
 export const canManageEnquiries = isSuperAdmin;
 
 export const canViewActivityLogs = isSuperAdmin;
+
+export const canManageStudentDeletion = isSuperAdmin;
+
+export const canPermanentlyDelete = isSuperAdmin;

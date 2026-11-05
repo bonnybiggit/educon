@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import { findStudentFile } from '../models/studentFileModel.js';
 import { studentDocumentFields } from '../middleware/studentUploads.js';
 import { findAdminStudents, findStudentById, formatStudentResponse, getStudentSummary, updateStudentById } from '../models/studentModel.js';
+import { moveToTrash } from '../services/trashService.js';
 import { logActivity } from '../services/activityLogService.js';
 import { AppError, cleanString, sendSuccess } from '../middleware/http.js';
 import { APPLICATION_STAGE_VALUES } from '../constants/applicationStages.js';
@@ -131,6 +132,7 @@ export const updateAdminStudent = async (req, res) => {
 
   await logActivity({
     adminId: req.admin.id,
+    actorEmail: req.admin.email,
     action: 'student_status_update',
     resource: 'student',
     resourceId: id,
@@ -141,4 +143,19 @@ export const updateAdminStudent = async (req, res) => {
     message: 'Student updated',
     data: { student: formatStudentResponse(student) },
   });
+};
+
+export const deleteAdminStudent = async (req, res) => {
+  if (!ObjectId.isValid(req.params.id)) throw new AppError('Invalid student id', 400);
+  const moved = await moveToTrash({ type: 'student', id: req.params.id, admin: req.admin });
+  if (!moved) throw new AppError('Student not found', 404);
+  await logActivity({
+    adminId: req.admin.id,
+    actorEmail: req.admin.email,
+    action: 'student_deletion',
+    resource: 'student',
+    resourceId: req.params.id,
+    details: { movedToTrash: true, trashId: moved.entry._id.toString() },
+  });
+  sendSuccess(res, { message: 'Student moved to Trash' });
 };

@@ -8,6 +8,7 @@ const pageTitles = {
   '/admin/services': 'Services',
   '/admin/testimonials': 'Testimonials',
   '/admin/blog': 'Blog',
+  '/admin/trash': 'Trash',
   '/admin/admins': 'Admin Management',
   '/admin/activity-logs': 'Activity Logs',
   '/admin/settings': 'Settings',

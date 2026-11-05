@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Eye, EyeOff, FileText, Plus, RefreshCcw, Search, Trash2, X } from 'lucide-react';
 import {
   createAdminBlogPost,
@@ -159,7 +159,7 @@ const AdminBlog = () => {
   };
 
   const removePost = async (post) => {
-    if (!window.confirm(`Delete the blog post "${post.title}"?`)) return;
+    if (!window.confirm(`Move the blog post "${post.title}" to Trash? You can restore it for 30 days.`)) return;
     setDeletingId(post.id);
     setSuccess('');
     setError('');

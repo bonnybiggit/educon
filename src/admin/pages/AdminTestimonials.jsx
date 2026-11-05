@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Eye, EyeOff, Plus, RefreshCcw, Search, Trash2, X } from 'lucide-react';
 import {
   createAdminTestimonial,
@@ -127,7 +127,7 @@ const AdminTestimonials = () => {
   };
 
   const removeTestimonial = async (testimonial) => {
-    if (!window.confirm(`Delete the testimonial from "${testimonial.name}"?`)) return;
+    if (!window.confirm(`Move the testimonial from "${testimonial.name}" to Trash? You can restore it for 30 days.`)) return;
     setDeletingId(testimonial.id);
     setSuccess('');
     setError('');

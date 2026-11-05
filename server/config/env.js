@@ -45,6 +45,7 @@ export const env = {
   blogCollection: process.env.MONGODB_BLOG_COLLECTION || 'blogPosts',
   activityLogsCollection: process.env.MONGODB_ACTIVITY_LOGS_COLLECTION || 'activityLogs',
   notificationLogCollection: process.env.MONGODB_NOTIFICATION_LOG_COLLECTION || 'notificationLog',
+  trashCollection: process.env.MONGODB_TRASH_COLLECTION || 'trash',
   studentPasswordResetsCollection: process.env.MONGODB_STUDENT_PASSWORD_RESETS_COLLECTION || 'studentPasswordResets',
   studentEmailVerificationsCollection: process.env.MONGODB_STUDENT_EMAIL_VERIFICATIONS_COLLECTION || 'studentEmailVerifications',
   corsOrigins,
