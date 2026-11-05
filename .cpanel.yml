@@ -1,0 +1,12 @@
+---
+deployment:
+  tasks:
+    # Additive copy only: nothing is deleted, and .env, node_modules, logs, backups and uploads are never touched.
+    - /bin/sh -c 'test -d /home/universe/universe-backend/server || { echo "App directory missing; aborting"; exit 1; }'
+    - /bin/cp -f /home/universe/repositories/educon/package.json /home/universe/repositories/educon/package-lock.json /home/universe/universe-backend/
+    - /bin/cp -f /home/universe/repositories/educon/server/index.js /home/universe/universe-backend/server/
+    - /bin/cp -R /home/universe/repositories/educon/server/config /home/universe/repositories/educon/server/constants /home/universe/repositories/educon/server/controllers /home/universe/repositories/educon/server/middleware /home/universe/repositories/educon/server/models /home/universe/repositories/educon/server/routes /home/universe/repositories/educon/server/scripts /home/universe/repositories/educon/server/services /home/universe/universe-backend/server/
+    # Built frontend (committed in dist/); copied only when a complete build is present.
+    - /bin/sh -c 'if [ -f /home/universe/repositories/educon/dist/index.html ]; then /bin/cp -R /home/universe/repositories/educon/dist/. /home/universe/universe-backend/dist/; else echo "No dist build; frontend skipped"; fi'
+    # Lets /api version info report the deployed commit (the live folder is not a git repository).
+    - /bin/sh -c 'cd /home/universe/repositories/educon && git rev-parse --short=12 HEAD > /home/universe/universe-backend/server/BUILD_COMMIT'
