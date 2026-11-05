@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { findAdminByEmail, findAdmins, revokeAllAdminSessions } from '../models/adminModel.js';
+import { findAdminByEmail, findAdminById, findAdmins, revokeAllAdminSessions, updateAdminById } from '../models/adminModel.js';
 import { logActivity } from './activityLogService.js';
 import { maskEmail } from './adminSecurityAlertService.js';
 import { isValidEmail, normalizeEmail } from '../middleware/http.js';
@@ -30,10 +30,10 @@ export const recoverAdminAccount = async ({ currentEmail, newEmail, newPassword 
     throw new Error('Password must be 12-128 characters with uppercase, lowercase and a number.');
   }
 
+  // passwordChangeRequired is left untouched until the stored hash is re-read and verified below.
   const patch = {
     passwordHash: await bcrypt.hash(newPassword, 12),
     passwordChangedAt: new Date(),
-    passwordChangeRequired: false,
   };
 
   const target = newEmail ? normalizeEmail(newEmail) : '';
@@ -43,8 +43,14 @@ export const recoverAdminAccount = async ({ currentEmail, newEmail, newPassword 
     patch.email = target;
   }
 
-  const updated = await revokeAllAdminSessions(admin._id, patch);
-  if (!updated) throw new Error('The administrator account could not be updated.');
+  const written = await revokeAllAdminSessions(admin._id, patch);
+  if (!written) throw new Error('The administrator account could not be updated.');
+  const stored = await findAdminById(admin._id.toString());
+  if (!stored || stored.email !== (patch.email || admin.email) || !(await bcrypt.compare(newPassword, stored.passwordHash || ''))) {
+    throw new Error('The new password could not be verified after saving. passwordChangeRequired was NOT cleared.');
+  }
+  const updated = await updateAdminById(admin._id, { passwordChangeRequired: false });
+  if (!updated) throw new Error('Password was set but passwordChangeRequired could not be cleared.');
   await logActivity({
     adminId: admin._id,
     actorEmail: patch.email || admin.email,

@@ -1,5 +1,5 @@
 import { MongoClient } from 'mongodb';
-import { env } from './env.js';
+import { env, isMemoryStoreAllowed } from './env.js';
 
 const memoryStore = {
   students: [],
@@ -24,8 +24,8 @@ let usingMemoryStore = false;
 
 export const connectDatabase = async () => {
   if (!env.mongoUri) {
-    if (env.nodeEnv === 'production') {
-      throw new Error('MONGODB_URI must be configured in production');
+    if (!isMemoryStoreAllowed) {
+      throw new Error(`MONGODB_URI must be configured (NODE_ENV=${env.nodeEnv}); the in-memory store is only for development/test`);
     }
     console.warn('No MONGODB_URI found. Starting in local memory mode for app testing.');
     usingMemoryStore = true;
@@ -38,7 +38,7 @@ export const connectDatabase = async () => {
     db = client.db(env.dbName);
     await ensureIndexes();
   } catch (error) {
-    if (env.nodeEnv === 'production') {
+    if (!isMemoryStoreAllowed) {
       throw new Error(`MongoDB connection failed: ${error.message}`, { cause: error });
     }
     console.warn('MongoDB connection failed. Falling back to in-memory storage.', error.message);

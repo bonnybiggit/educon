@@ -97,6 +97,7 @@ try {
   assert.equal(owner.name, original.name);
   assert.equal(owner.isBootstrapAdmin, original.isBootstrapAdmin);
   assert.equal(owner.email, 'preferred@example.invalid');
+  assert.equal(owner.passwordChangeRequired, false);
   assert.equal((await fetch(`${baseUrl}/api/admin/me`, { headers: { Cookie: oldCookie } })).status, 401, 'old session survived recovery');
   assert.equal((await post('/login', { email: 'preferred@example.invalid', password: NEW_PASSWORD })).response.status, 200);
   assert.equal((await post('/login', { email: 'stored@example.invalid', password: NEW_PASSWORD })).response.status, 401);

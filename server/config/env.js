@@ -12,7 +12,9 @@ const parseOrigins = (value) => {
     .filter(Boolean);
 };
 
-const nodeEnv = process.env.NODE_ENV || 'development';
+// Passenger/cPanel sets PASSENGER_APP_ENV; without this, a missing NODE_ENV on the host would silently
+// select development defaults (including the in-memory store).
+const nodeEnv = process.env.NODE_ENV || process.env.PASSENGER_APP_ENV || 'development';
 const frontendUrl = process.env.FRONTEND_URL
   || (nodeEnv === 'production' ? 'https://universeconsultsedu.com' : 'http://localhost:5173');
 const normalizedFrontendUrl = frontendUrl.replace(/\/+$/, '');
@@ -74,6 +76,9 @@ export const env = {
 };
 
 export const isProduction = env.nodeEnv === 'production';
+
+// The in-memory store is a local-testing convenience only; it is never allowed unless the mode is explicitly one of these.
+export const isMemoryStoreAllowed = ['development', 'test'].includes(env.nodeEnv);
 
 export const validateProductionEnv = () => {
   if (!isProduction) return;

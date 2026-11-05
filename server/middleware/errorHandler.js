@@ -2,8 +2,11 @@ import { MongoServerError } from 'mongodb';
 import { sendError } from './http.js';
 
 export const notFound = (req, _res, next) => {
-  const error = new Error(`Route not found: ${req.method} ${req.originalUrl}`);
+  // Operational so the client sees "Route not found" instead of being masked as "Internal server error".
+  const error = new Error('Route not found');
   error.statusCode = 404;
+  error.isOperational = true;
+  error.errorCode = 'ROUTE_NOT_FOUND';
   next(error);
 };
 
